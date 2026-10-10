@@ -34,4 +34,35 @@ public class MainActivityRenderTest {
   try(FileOutputStream out=new FileOutputStream(f)) { bitmap.compress(Bitmap.CompressFormat.PNG,100,out); }
   assertEquals(1080,bitmap.getWidth()); assertFalse(CleanerService.running); a.finish();
  }
+ @Test public void missingAccessibilityButtonOpensSetup() throws Exception {
+  Context context=RuntimeEnvironment.getApplication();
+  context.getSharedPreferences("settings",0).edit().putBoolean("disclosure_seen",true).commit();
+  CleanerService.connected=null; CleanerService.running=false;
+  MainActivity a=Robolectric.buildActivity(MainActivity.class).create().get();
+  java.lang.reflect.Method status=MainActivity.class.getDeclaredMethod("updateStatus"); status.setAccessible(true); status.invoke(a);
+  java.lang.reflect.Field clean=MainActivity.class.getDeclaredField("clean"); clean.setAccessible(true);
+  android.widget.Button button=(android.widget.Button)clean.get(a);
+  assertTrue("Setup must remain reachable without service/selection",button.isEnabled());
+  assertTrue(button.performClick());
+  android.app.AlertDialog dialog=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();
+  assertNotNull(dialog); assertTrue(dialog.isShowing());
+  assertEquals("Bedienungshilfe aktivieren",org.robolectric.Shadows.shadowOf(dialog).getTitle().toString());
+  assertFalse(CleanerService.running);
+  View v=dialog.getWindow().getDecorView();
+  v.measure(View.MeasureSpec.makeMeasureSpec(1000,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1900,View.MeasureSpec.AT_MOST));
+  v.layout(0,0,1000,v.getMeasuredHeight());
+  Bitmap bitmap=Bitmap.createBitmap(1000,v.getHeight(),Bitmap.Config.ARGB_8888); v.draw(new Canvas(bitmap));
+  File f=new File("build/reports/ui/accessibility-setup.png"); f.getParentFile().mkdirs();
+  try(FileOutputStream out=new FileOutputStream(f)) { bitmap.compress(Bitmap.CompressFormat.PNG,100,out); }
+  dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).performClick();
+  IntentCheck.assertAccessibilitySettings(a);
+  a.finish();
+ }
+ private static class IntentCheck {
+  static void assertAccessibilitySettings(MainActivity a) {
+   android.content.Intent launched=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();
+   assertNotNull(launched); assertEquals(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS,launched.getAction());
+  }
+ }
 }
+
