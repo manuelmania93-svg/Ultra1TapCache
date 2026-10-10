@@ -55,6 +55,7 @@ public class MainActivityRenderTest {
   File f=new File("build/reports/ui/accessibility-setup.png"); f.getParentFile().mkdirs();
   try(FileOutputStream out=new FileOutputStream(f)) { bitmap.compress(Bitmap.CompressFormat.PNG,100,out); }
   dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).performClick();
+  org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
   IntentCheck.assertAccessibilitySettings(a);
   a.finish();
  }
