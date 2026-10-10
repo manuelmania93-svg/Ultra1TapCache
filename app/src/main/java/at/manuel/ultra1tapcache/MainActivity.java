@@ -66,7 +66,7 @@ public class MainActivity extends Activity {
         LinearLayout shortcuts=new LinearLayout(this);
         shortcuts.addView(button(getString(R.string.all_apps_settings),()->openAllApps()),new LinearLayout.LayoutParams(0,dp(48),1));
         shortcuts.addView(button(getString(R.string.open_app_info),()->openAppInfo()),new LinearLayout.LayoutParams(0,dp(48),1));root.addView(shortcuts);
-        root.addView(button(getString(R.string.history_title),()->new AlertDialog.Builder(this).setTitle(getString(R.string.history_title)).setMessage(getString(R.string.history_hint)).setPositiveButton(getString(R.string.ui_020),null).show()),new LinearLayout.LayoutParams(-1,dp(44)));
+        root.addView(button(getString(R.string.history_title),()->new AlertDialog.Builder(this).setTitle(getString(R.string.history_title)).setMessage(getString(R.string.history_hint)).setPositiveButton(android.R.string.ok,null).show()),new LinearLayout.LayoutParams(-1,dp(44)));
         root.addView(button(getString(R.string.diag_title),()->showRunDiagnostics()),new LinearLayout.LayoutParams(-1,dp(44)));
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
         toggles.addView(text(getString(R.string.cleaning_speed),13,WHITE,true));
@@ -273,7 +273,7 @@ public class MainActivity extends Activity {
         resume.setVisibility(!CleanerService.running && !RunJournal.remaining(this).isEmpty()?View.VISIBLE:View.GONE);resume.setEnabled(!scanning);
         clean.setText(CleanerService.running?getString(R.string.ui_079):getString(R.string.ui_080)+selected+getString(R.string.ui_081)); clean.setEnabled(true); refresh.setEnabled(!scanning && !CleanerService.running);
     }
-    @Override protected void onResume() { super.onResume(); resumed=true; RunJournal.applyHistory(this,apps); renderList(); handler.post(update); handler.post(()->maybeGuideSetup()); if(recheckUsage && !CleanerService.running) { recheckUsage=false; startScan(); } else if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
+    @Override protected void onResume() { super.onResume(); resumed=true; renderList(); handler.post(update); handler.post(()->maybeGuideSetup()); if(recheckUsage && !CleanerService.running) { recheckUsage=false; startScan(); } else if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
     @Override protected void onPause() { resumed=false; handler.removeCallbacks(update); super.onPause(); }
     @Override protected void onDestroy() { generation++; if(scan!=null) scan.cancel(true); worker.shutdownNow(); handler.removeCallbacksAndMessages(null); super.onDestroy(); }
     private TextView text(String s,int sp,int color,boolean bold) { TextView t=new TextView(this); t.setText(s); t.setTextSize(sp); t.setTextColor(color); if(bold)t.setTypeface(null,Typeface.BOLD); return t; }
