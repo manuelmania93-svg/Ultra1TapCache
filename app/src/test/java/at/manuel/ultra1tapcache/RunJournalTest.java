@@ -8,6 +8,12 @@ import org.robolectric.annotation.Config;
 import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class) @Config(sdk=35,qualifiers="de-w411dp-h891dp-420dpi") @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
 public class RunJournalTest {
+ @Test public void settingsShortcutsOpenExactSystemPages() throws Exception {
+  Context c=RuntimeEnvironment.getApplication();c.getSharedPreferences("settings",0).edit().putBoolean("disclosure_seen",true).commit();
+  MainActivity a=org.robolectric.Robolectric.buildActivity(MainActivity.class).create().get();
+  for(String name:new String[]{"openAllApps","openAppInfo"}){java.lang.reflect.Method m=MainActivity.class.getDeclaredMethod(name);m.setAccessible(true);m.invoke(a);android.content.Intent intent=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();assertEquals("openAllApps".equals(name)?android.provider.Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS:android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,intent.getAction());if("openAppInfo".equals(name))assertEquals("package:"+a.getPackageName(),intent.getDataString());}
+  assertFalse(CleanerService.running);a.finish();
+ }
  @Test public void setupChoicePrioritizesUsageAndStopsWhenReady() {
   assertEquals(1,MainActivity.missingSetupStep(false,false));assertEquals(1,MainActivity.missingSetupStep(false,true));assertEquals(2,MainActivity.missingSetupStep(true,false));assertEquals(0,MainActivity.missingSetupStep(true,true));
  }
