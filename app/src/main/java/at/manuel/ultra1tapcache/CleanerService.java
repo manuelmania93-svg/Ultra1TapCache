@@ -29,33 +29,42 @@ public class CleanerService extends AccessibilityService {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private List<AppEntry> queue = List.of();
-    private int index, generation;
+    private int index, generation, appToken;
+    private boolean preparing;
+    private Runnable watchdog;
     private boolean turbo, cacheClicked, storageOpened, identitySeen, measuring;
     private long deadline, nextAllowed;
     private Button stopButton;
     private WindowManager wm;
-    private final Runnable tick = () -> step();
+    private final Runnable tick = () -> {try {step();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}};
 
     @Override protected void onServiceConnected() { connected = this; }
     static boolean start(List<AppEntry> entries, boolean fast) {
         if (connected == null || running || entries.isEmpty()) return false;
-        connected.begin(entries, fast); return running;
+        try {connected.begin(entries, fast, false);return running;}catch(RuntimeException e){connected.stop("checkpoint_error",connected.getString(R.string.engine_error)+": "+e.getClass().getSimpleName());return false;}
     }
-    static void cancel() { if (connected != null) connected.finish(connected.getString(R.string.ui_083)); }
-    private void begin(List<AppEntry> entries, boolean fast) {
+    static boolean resume(boolean fast) {
+        if(connected==null||running)return false;
+        List<AppEntry> remaining=RunJournal.remaining(connected);if(remaining.isEmpty())return false;
+        try{connected.begin(remaining,fast,true);return running;}catch(RuntimeException e){connected.stop("checkpoint_error",connected.getString(R.string.engine_error));return false;}
+    }
+    static void cancel() { if (connected != null) connected.stop("user_stop",connected.getString(R.string.ui_083)); }
+    private void begin(List<AppEntry> entries, boolean fast, boolean resume) {
         generation++; queue = new ArrayList<>(entries); turbo = fast;
-        attempted = clicked = verified = skipped = 0; reclaimed = 0; index = -1; running = true;
+        if(!resume) RunJournal.begin(this,entries);
+        attempted=clicked=skipped=0; verified=RunJournal.count(this,"confirmed"); reclaimed=RunJournal.read(this).optLong("bytes"); index=-1;running=true;
+        RunJournal.reason(this,"running");
         try {
             wm = getSystemService(WindowManager.class);
             stopButton = new Button(this); stopButton.setText(getString(R.string.ui_084));
             stopButton.setTextColor(Color.WHITE); stopButton.setBackgroundColor(Color.rgb(24,62,80));
-            stopButton.setOnClickListener(v -> finish(getString(R.string.ui_083)));
+            stopButton.setOnClickListener(v -> stop("user_stop",getString(R.string.ui_083)));
             WindowManager.LayoutParams p = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT);
             p.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL; p.y = 80;
             wm.addView(stopButton,p);
         } catch (RuntimeException e) {
-            finish(getString(R.string.ui_085)); return;
+            stop("overlay_missing",getString(R.string.ui_085)); return;
         }
         nextApp();
     }
@@ -63,27 +72,50 @@ public class CleanerService extends AccessibilityService {
         handler.removeCallbacks(tick);
         if (!running) return;
         index++;
-        if (index >= queue.size()) { finish(getString(R.string.ui_086)); return; }
-        attempted++; cacheClicked = storageOpened = identitySeen = measuring = false;
-        AppEntry app = queue.get(index);
-        status = (index + 1) + "/" + queue.size() + " • " + app.label;
-        stopButton.setText("STOP • " + (index + 1) + "/" + queue.size());
-        deadline = SystemClock.uptimeMillis() + 12000; nextAllowed = SystemClock.uptimeMillis() + (turbo ? 250 : 650);
-        try {
-            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + app.packageName));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent); schedule(turbo ? 250 : 650);
-        } catch (RuntimeException e) { skipped++; nextApp(); }
+        if (index >= queue.size()) { stop("finished",getString(R.string.ui_086)); return; }
+        attempted++;cacheClicked=storageOpened=identitySeen=measuring=false;preparing=true;appToken++;
+        AppEntry app=queue.get(index);status=(index+1)+"/"+queue.size()+" • "+app.label;
+        stopButton.setText("STOP • "+(index+1)+"/"+queue.size());
+        RunJournal.state(this,app.packageName,"started",null,0);
+        int token=generation, current=appToken;
+        armWatchdog("baseline_timeout");
+        io.execute(()-> {
+            Long baseline=AppScanner.cache(this,app.packageName);
+            postSafe(()-> {
+                if(!running||token!=generation||current!=appToken)return;
+                disarmWatchdog();preparing=false;
+                if(baseline==null){recordAndAdvance("unmeasurable",null,0);return;}
+                app.cacheBytes=baseline;RunJournal.baseline(this,app.packageName,baseline);
+                if(baseline==0){recordAndAdvance("already_empty",0L,0);return;}
+                deadline=SystemClock.uptimeMillis()+12000;nextAllowed=SystemClock.uptimeMillis()+(turbo?250:650);
+                try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));schedule(turbo?250:650); }
+                catch(RuntimeException e){recordAndAdvance("settings_failed",null,0);}
+            });
+        });
+    }
+    private void postSafe(Runnable action){handler.post(()->{try{action.run();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}});}
+    private void disarmWatchdog(){if(watchdog!=null)handler.removeCallbacks(watchdog);watchdog=null;}
+    private void armWatchdog(String reason){
+        disarmWatchdog();int token=generation,current=appToken;
+        watchdog=()-> {if(running&&token==generation&&current==appToken) stop(reason,getString(R.string.measure_timeout));};handler.postDelayed(watchdog,10000);
+    }
+    private void recordAndAdvance(String state,Long after,long bytes){
+        AppEntry app=queue.get(index);RunJournal.state(this,app.packageName,state,after,bytes);
+        if(after!=null)app.cacheBytes=after;
+        if("confirmed".equals(state)){verified++;reclaimed+=bytes;app.selected=false;}
+        else if("already_empty".equals(state)){app.selected=false;}
+        else skipped++;
+        measuring=preparing=false;disarmWatchdog();handler.post(()->{try{nextApp();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}});
     }
     private void schedule(long ms) { handler.removeCallbacks(tick); if (running) handler.postDelayed(tick,ms); }
     @Override public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (!running || measuring) return;
+        if (!running || measuring || preparing) return;
         if (SystemClock.uptimeMillis() >= nextAllowed) schedule(80);
     }
     private void step() {
-        if (!running || measuring) return;
+        if (!running || measuring || preparing) return;
         long now = SystemClock.uptimeMillis();
-        if (now >= deadline) { skipped++; nextApp(); return; }
+        if (now >= deadline) { recordAndAdvance("settings_timeout",null,0); return; }
         if (now < nextAllowed) { schedule(nextAllowed-now); return; }
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) { schedule(200); return; }
@@ -95,7 +127,7 @@ public class CleanerService extends AccessibilityService {
             if (!identitySeen) { schedule(200); return; }
             AccessibilityNodeInfo cache = find(root,true);
             if (!cacheClicked && cache != null) {
-                if (!cache.isEnabled()) { skipped++; nextApp(); return; }
+                if (!cache.isEnabled()) { recordAndAdvance("cache_button_disabled",null,0); return; }
                 if (safeClick(cache)) {
                     cacheClicked = true; clicked++; nextAllowed = now + (turbo ? 400 : 900);
                     schedule(turbo ? 400 : 900); return;
@@ -153,22 +185,25 @@ public class CleanerService extends AccessibilityService {
         return false;
     }
     private void measureAndContinue() {
-        if (!running || measuring) return;
-        measuring=true;
-        int token=generation; AppEntry app=queue.get(index);
-        io.execute(() -> {
+        if(!running||measuring)return;measuring=true;
+        int token=generation,current=appToken;AppEntry app=queue.get(index);
+        RunJournal.state(this,app.packageName,"clicked",null,0);armWatchdog("measurement_timeout");
+        io.execute(()-> {
             Long after=AppScanner.cache(this,app.packageName);
-            handler.post(() -> {
-                if (!running || token!=generation) return;
-                if (app.cacheBytes!=null && after!=null && after<app.cacheBytes) { reclaimed+=app.cacheBytes-after; verified++; }
-                else skipped++;
-                nextApp();
+            postSafe(()-> {
+                if(!running||token!=generation||current!=appToken)return;
+                if(app.cacheBytes!=null&&after!=null&&after<app.cacheBytes)recordAndAdvance("confirmed",after,app.cacheBytes-after);
+                else recordAndAdvance("unconfirmed",after,0);
             });
         });
     }
+    private void stop(String reason,String message){
+        if(running)try{RunJournal.reason(this,reason);}catch(RuntimeException e){message=getString(R.string.engine_error)+": checkpoint unavailable";}
+        finish(message);
+    }
     private void finish(String message) {
         boolean wasRunning=running; running=false; generation++; handler.removeCallbacksAndMessages(null);
-        status=message;
+        status=message;disarmWatchdog();preparing=measuring=false;
         if (stopButton!=null && wm!=null) {
             try { wm.removeView(stopButton); } catch (RuntimeException ignored) { }
         }
@@ -178,6 +213,6 @@ public class CleanerService extends AccessibilityService {
             try { startActivity(i); } catch(RuntimeException ignored) { }
         }
     }
-    @Override public void onInterrupt() { finish(getString(R.string.ui_087)); }
-    @Override public void onDestroy() { finish(getString(R.string.ui_088)); connected=null; io.shutdownNow(); super.onDestroy(); }
+    @Override public void onInterrupt() { stop("service_interrupted",getString(R.string.ui_087)); }
+    @Override public void onDestroy() { stop("service_destroyed",getString(R.string.ui_088)); connected=null; io.shutdownNow(); super.onDestroy(); }
 }
