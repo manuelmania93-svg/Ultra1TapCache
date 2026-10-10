@@ -97,6 +97,7 @@ public class MainActivityRenderTest {
   v=dialog.getWindow().getDecorView();v.measure(View.MeasureSpec.makeMeasureSpec(1000,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(2200,View.MeasureSpec.AT_MOST));v.layout(0,0,1000,v.getMeasuredHeight());
   saveView(v,"usage-dialog.png");
   dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).performClick();
+  org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
   android.content.Intent launched=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();
   assertEquals(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS,launched.getAction());
   assertEquals("package:"+a.getPackageName(),launched.getDataString());
@@ -110,7 +111,8 @@ public class MainActivityRenderTest {
  }
  private static class IntentCheck {
   static void assertAccessibilitySettings(MainActivity a) {
-   android.content.Intent launched=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();
+   org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+  android.content.Intent launched=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();
    assertNotNull(launched); assertEquals(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS,launched.getAction());
   }
  }
