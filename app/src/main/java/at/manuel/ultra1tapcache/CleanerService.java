@@ -202,7 +202,7 @@ public class CleanerService extends AccessibilityService {
         finish(message);
     }
     private void finish(String message) {
-        boolean wasRunning=running; running=false; generation++; handler.removeCallbacksAndMessages(null);
+        boolean wasRunning=running; running=false; generation++; appToken++; handler.removeCallbacksAndMessages(null);
         status=message;disarmWatchdog();preparing=measuring=false;
         if (stopButton!=null && wm!=null) {
             try { wm.removeView(stopButton); } catch (RuntimeException ignored) { }
