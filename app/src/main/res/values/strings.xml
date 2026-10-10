@@ -106,4 +106,8 @@
     <string name="process_stopped" formatted="false">"Previous run was interrupted outside the app. Exact cause unknown. Progress saved"</string>
     <string name="confirmed_saved" formatted="false">"confirmed and saved"</string>
     <string name="last_app" formatted="false">"Last app"</string>
+    <string name="cleaning_speed" formatted="false">"Cleaning speed"</string>
+    <string name="speed_slow" formatted="false">"Slow - longer waits"</string>
+    <string name="speed_normal" formatted="false">"Normal"</string>
+    <string name="speed_turbo" formatted="false">"Turbo - shortest waits"</string>
 </resources>
