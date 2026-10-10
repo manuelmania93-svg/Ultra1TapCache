@@ -8,6 +8,10 @@ import org.robolectric.annotation.Config;
 import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class) @Config(sdk=35,qualifiers="de-w411dp-h891dp-420dpi") @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
 public class RunJournalTest {
+ @Test public void freshScanDeselectsConfirmedButKeepsLiveBytesAndUnconfirmed() {
+  Context c=RuntimeEnvironment.getApplication();AppEntry done=new AppEntry("done","Done",100L);AppEntry pending=new AppEntry("pending","Pending",200L);java.util.List<AppEntry> original=java.util.Arrays.asList(done,pending);RunJournal.begin(c,original);RunJournal.state(c,"done","confirmed",0L,100);RunJournal.state(c,"pending","unconfirmed",200L,0);RunJournal.reason(c,"finished");
+  AppEntry freshDone=new AppEntry("done","Done",20L);AppEntry freshPending=new AppEntry("pending","Pending",200L);freshDone.selected=freshPending.selected=true;RunJournal.apply(c,java.util.Arrays.asList(freshDone,freshPending));assertFalse(freshDone.selected);assertTrue(freshPending.selected);assertEquals(Long.valueOf(20),freshDone.cacheBytes);assertTrue(RunJournal.completed(c,"done"));assertFalse(RunJournal.completed(c,"pending"));c.getSharedPreferences("clean_run",0).edit().clear().commit();
+ }
  @Test public void installerHintIsNotAConfirmedRestriction() {
   assertTrue(MainActivity.restrictedSetupPossible(35,null,false));assertTrue(MainActivity.restrictedSetupPossible(35,"com.android.packageinstaller",false));assertFalse(MainActivity.restrictedSetupPossible(35,"com.android.vending",false));assertFalse(MainActivity.restrictedSetupPossible(35,null,true));assertFalse(MainActivity.restrictedSetupPossible(32,null,false));
  }
