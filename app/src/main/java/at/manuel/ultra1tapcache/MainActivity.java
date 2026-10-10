@@ -35,9 +35,12 @@ public class MainActivity extends Activity {
     private SharedPreferences prefs;
     private boolean scanning, resumed, recheckUsage;
     private int generation;
+    private int setupShown;
+    private boolean setupPaused;
+    private AlertDialog setupDialog;
     private final Runnable update=new Runnable() { public void run() { if(resumed) { updateStatus(); handler.postDelayed(this,500); } } };
     @Override public void onCreate(Bundle state) {
-        super.onCreate(state); prefs=getSharedPreferences("settings",MODE_PRIVATE); build();
+        super.onCreate(state); if(state!=null){setupShown=state.getInt("setup_shown");setupPaused=state.getBoolean("setup_paused");} prefs=getSharedPreferences("settings",MODE_PRIVATE); build();
         if(!prefs.getBoolean("disclosure_seen",false)) disclosure();
     }
     private void build() {
@@ -62,7 +65,7 @@ public class MainActivity extends Activity {
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
         toggles.addView(text(getString(R.string.cleaning_speed),13,WHITE,true));
         Spinner speed=new Spinner(this);String[] speedKeys={"slow","normal","turbo"};
-        ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{getString(R.string.speed_slow),getString(R.string.speed_normal),getString(R.string.speed_turbo)});adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);speed.setAdapter(adapter);
+        ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{getString(R.string.speed_slow),getString(R.string.speed_normal),getString(R.string.speed_turbo)}) { @Override public View getView(int pos,View convert,android.view.ViewGroup parent){View v=super.getView(pos,convert,parent);((TextView)v).setTextColor(WHITE);return v;} };adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);speed.setAdapter(adapter);
         String savedSpeed=prefs.getString("speed",prefs.getBoolean("turbo",true)?"turbo":"normal");speed.setSelection("slow".equals(savedSpeed)?0:"normal".equals(savedSpeed)?1:2);
         speed.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> p){}public void onItemSelected(AdapterView<?> p,View v,int pos,long id){prefs.edit().putString("speed",speedKeys[pos]).apply();}});
         toggles.addView(speed,new LinearLayout.LayoutParams(-1,dp(44)));
@@ -85,8 +88,25 @@ public class MainActivity extends Activity {
         s.setOnCheckedChangeListener((v,on)-> { prefs.edit().putBoolean(key,on).apply(); if(changed!=null) changed.run(); }); return s;
     }
     private void disclosure() {
-        new AlertDialog.Builder(this).setTitle(getString(R.string.ui_014)).setMessage(getString(R.string.ui_015)).setPositiveButton(getString(R.string.ui_016),(d,w)->prefs.edit().putBoolean("disclosure_seen",true).apply()).setCancelable(false).show();
+        new AlertDialog.Builder(this).setTitle(getString(R.string.ui_014)).setMessage(getString(R.string.ui_015)).setPositiveButton(getString(R.string.ui_016),(d,w)->{prefs.edit().putBoolean("disclosure_seen",true).apply();handler.post(()->maybeGuideSetup());}).setCancelable(false).show();
     }
+    static int missingSetupStep(boolean usageReady,boolean helperReady){return !usageReady?1:!helperReady?2:0;}
+    private void maybeGuideSetup(){
+        if(!resumed||isFinishing()||CleanerService.running||setupPaused||!prefs.getBoolean("disclosure_seen",false)||setupDialog!=null)return;
+        int step=missingSetupStep(AppScanner.hasUsage(this)&&AppScanner.readState!=AppScanner.DENIED,accessibilityEnabled()&&CleanerService.connected!=null);
+        if(step==0||(setupShown&step)!=0)return;
+        setupShown|=step;
+        final boolean[] jumping={false};
+        setupDialog=new AlertDialog.Builder(this).setTitle(getString(R.string.guided_setup_title))
+            .setMessage(getString(step==1?R.string.guided_usage:R.string.guided_helper))
+            .setPositiveButton(getString(step==1?R.string.ui_037:R.string.ui_021),(d,w)->{
+                jumping[0]=true;if(step==1)launchUsage(true);else {recheckUsage=true;try{startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));}catch(RuntimeException e){showFeedback(getString(R.string.ui_023));}}
+            })
+            .setNeutralButton(getString(R.string.open_app_info),(d,w)->{jumping[0]=true;openAppInfo();})
+            .setNegativeButton(getString(R.string.ui_025),null).create();
+        setupDialog.setOnDismissListener(d->{setupDialog=null;if(!jumping[0])setupPaused=true;});setupDialog.show();
+    }
+    @Override protected void onSaveInstanceState(Bundle out){super.onSaveInstanceState(out);out.putInt("setup_shown",setupShown);out.putBoolean("setup_paused",setupPaused);}
     private boolean accessibilityEnabled() {
         String enabled=Settings.Secure.getString(getContentResolver(),Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
         if(enabled==null) return false;
@@ -148,7 +168,7 @@ public class MainActivity extends Activity {
 
         scan=worker.submit(()-> {
             List<AppEntry> found=AppScanner.scan(this,false);
-            handler.post(()-> { if(isDestroyed() || token!=generation) return; apps=found; scanning=false; renderList(); updateStatus(); });
+            handler.post(()-> { if(isDestroyed() || token!=generation) return; apps=found; scanning=false; renderList(); updateStatus(); maybeGuideSetup(); });
         });
     }
     private void renderList() {
@@ -228,7 +248,7 @@ public class MainActivity extends Activity {
         resume.setVisibility(!CleanerService.running && !RunJournal.remaining(this).isEmpty()?View.VISIBLE:View.GONE);resume.setEnabled(!scanning);
         clean.setText(CleanerService.running?getString(R.string.ui_079):getString(R.string.ui_080)+selected+getString(R.string.ui_081)); clean.setEnabled(true); refresh.setEnabled(!scanning && !CleanerService.running);
     }
-    @Override protected void onResume() { super.onResume(); resumed=true; renderList(); handler.post(update); if(recheckUsage && !CleanerService.running) { recheckUsage=false; startScan(); } else if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
+    @Override protected void onResume() { super.onResume(); resumed=true; renderList(); handler.post(update); handler.post(()->maybeGuideSetup()); if(recheckUsage && !CleanerService.running) { recheckUsage=false; startScan(); } else if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
     @Override protected void onPause() { resumed=false; handler.removeCallbacks(update); super.onPause(); }
     @Override protected void onDestroy() { generation++; if(scan!=null) scan.cancel(true); worker.shutdownNow(); handler.removeCallbacksAndMessages(null); super.onDestroy(); }
     private TextView text(String s,int sp,int color,boolean bold) { TextView t=new TextView(this); t.setText(s); t.setTextSize(sp); t.setTextColor(color); if(bold)t.setTypeface(null,Typeface.BOLD); return t; }
