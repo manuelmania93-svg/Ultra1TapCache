@@ -109,6 +109,14 @@ public class MainActivityRenderTest {
   File f=new File("build/reports/ui/"+name);f.getParentFile().mkdirs();
   try(FileOutputStream out=new FileOutputStream(f)){b.compress(Bitmap.CompressFormat.PNG,100,out);}
  }
+ @Test public void germanSetupHelpAndSelectAllAreReadable() throws Exception {
+  Context c=RuntimeEnvironment.getApplication();c.getSharedPreferences("settings",0).edit().putBoolean("disclosure_seen",true).commit();CleanerService.running=false;
+  MainActivity a=Robolectric.buildActivity(MainActivity.class).create().get();
+  for(String method:new String[]{"showAndroidSetupHelp","confirmSelectAll"}) {
+   java.lang.reflect.Method m=MainActivity.class.getDeclaredMethod(method);m.setAccessible(true);m.invoke(a);
+   android.app.AlertDialog d=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();View v=d.getWindow().getDecorView();v.measure(View.MeasureSpec.makeMeasureSpec(1000,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(2200,View.MeasureSpec.AT_MOST));v.layout(0,0,1000,v.getMeasuredHeight());saveView(v,"german-"+method+".png");d.dismiss();
+  }a.finish();
+ }
  private static class IntentCheck {
   static void assertAccessibilitySettings(MainActivity a) {
    org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
