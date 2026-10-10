@@ -114,10 +114,11 @@ public class CleanerService extends AccessibilityService {
     }
     private void recordAndAdvance(String state,Long after,long bytes){
         AppEntry app=queue.get(index);RunJournal.state(this,app.packageName,state,after,bytes);
+        if("confirmed".equals(state)||"attempted_unchanged".equals(state))RunJournal.remember(this,app.packageName,state,after);
         if(after!=null)app.cacheBytes=after;
         if("confirmed".equals(state)){verified++;reclaimed+=bytes;app.selected=false;}
         else if("already_empty".equals(state)||"small_cache_skipped".equals(state)){app.selected=false;}
-        else skipped++;
+        else if("attempted_unchanged".equals(state)){app.selected=false;}else skipped++;
         measuring=preparing=false;disarmWatchdog();handler.post(()->{try{nextApp();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}});
     }
     private void schedule(long ms) { handler.removeCallbacks(tick); if (running) handler.postDelayed(tick,ms); }
@@ -241,6 +242,7 @@ public class CleanerService extends AccessibilityService {
     }
     static boolean measuredDecrease(Long baseline,Long after){return baseline!=null&&after!=null&&baseline-after>4096;}
     static boolean shouldRetry(Long baseline,Long after,int attempt){return baseline!=null&&after!=null&&baseline>=1048576&&!measuredDecrease(baseline,after)&&attempt<2;}
+    static boolean exhaustedAccepted(Context c,String pkg,Long baseline,Long after,int attempt){org.json.JSONArray rows=RunJournal.read(c).optJSONArray("rows");if(rows==null)return false;for(int i=0;i<rows.length();i++){org.json.JSONObject r=rows.optJSONObject(i);if(r!=null&&pkg.equals(r.optString("pkg")))return attempt>=2&&after!=null&&baseline!=null&&after>=baseline&&r.optBoolean("click_accepted")&&r.optBoolean("button_enabled");}return false;}
     static long retryDelay(int reads){return reads==1?300:reads==2?450:-1;}
     private void measureAndContinue() {
         if(!running||measuring)return;measuring=true;
@@ -263,7 +265,7 @@ public class CleanerService extends AccessibilityService {
                     deadline=SystemClock.uptimeMillis()+12000;nextAllowed=SystemClock.uptimeMillis()+uiWait;
                     try{startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));schedule(uiWait);}catch(RuntimeException e){recordAndAdvance("settings_failed",after,0);}return;
                 }
-                recordAndAdvance(after==null?"unmeasurable":app.cacheBytes!=null&&after<app.cacheBytes?"tiny_decrease":"unconfirmed",after,0);
+                recordAndAdvance(after==null?"unmeasurable":app.cacheBytes!=null&&after<app.cacheBytes?"tiny_decrease":exhaustedAccepted(this,app.packageName,app.cacheBytes,after,cleanAttempt)?"attempted_unchanged":"unconfirmed",after,0);
             });
         });
     }
