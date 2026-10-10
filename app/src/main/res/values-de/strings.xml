@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" formatted="false">"Ultra1TapCache"</string>
-    <string name="ui_001" formatted="false">"EXPERIMENT • DIALOG 10"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • HISTORY 11"</string>
     <string name="ui_002" formatted="false">"Nur Cache. Keine App-Daten."</string>
     <string name="ui_003" formatted="false">"GEMESSENER CACHE"</string>
     <string name="ui_004" formatted="false">"Nutzungszugriff aktivieren, dann scannen."</string>
@@ -148,4 +148,9 @@
     <string name="large_default_hint">Nach dem Scan sind Benutzer-Apps über 1 MB vorausgewählt. Kleinere Apps bleiben über Alle / keine erreichbar; System-Apps nur mit eigener Auswahl.</string>
     <string name="residual_saved">" (erledigt; Rest-Cache)"</string>
     <string name="residual_hint">Abnahme gemessen; Rest-Cache bleibt. Android oder die App kann ihn behalten oder neu anlegen. Null ist nicht erforderlich.</string>
+    <string name="unchanged_saved">" (versucht; unverändert)"</string>
+    <string name="diag_attempted">Keine Abnahme nach 2 Versuchen; nicht bestätigt</string>
+    <string name="attempted_count">versucht, unverändert</string>
+    <string name="history_hint">Automatische Historie: bestätigter Rest wird bis zu 24 Stunden nicht erneut vorausgewählt; unverändert nach 2 Versuchen bis zu 6 Stunden. Wachstum, App-Update oder Neuinstallation macht erneut auswählbar. Manuelle Auswahl bleibt möglich.</string>
+    <string name="history_title">Automatische Cache-Historie</string>
 </resources>
