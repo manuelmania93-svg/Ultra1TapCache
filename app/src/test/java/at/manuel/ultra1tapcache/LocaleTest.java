@@ -61,8 +61,13 @@ public class LocaleTest {
   android.content.Intent i=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();
   assertEquals(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,i.getAction());assertEquals("package:"+a.getPackageName(),i.getDataString());assertFalse(CleanerService.running);a.finish();
  }
+ @Test public void allSystemSelectionDialogIsReadable() throws Exception {
+  Context c=RuntimeEnvironment.getApplication();c.getSharedPreferences("settings",0).edit().putBoolean("disclosure_seen",true).commit();CleanerService.running=false;
+  MainActivity a=Robolectric.buildActivity(MainActivity.class).create().get();java.lang.reflect.Method m=MainActivity.class.getDeclaredMethod("confirmSelectAll");m.setAccessible(true);m.invoke(a);
+  AlertDialog d=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();assertTrue(org.robolectric.Shadows.shadowOf(d).getMessage().toString().contains("does not start cleaning"));render(d.getWindow().getDecorView(),"english-select-all.png",1000,2200,false);d.dismiss();a.finish();
+ }
  private static void render(View v,String name,int width,int height,boolean exact) throws Exception {
   v.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,exact?View.MeasureSpec.EXACTLY:View.MeasureSpec.AT_MOST));v.layout(0,0,width,v.getMeasuredHeight());
   Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));File f=new File("build/reports/ui/"+name);f.getParentFile().mkdirs();try(FileOutputStream out=new FileOutputStream(f)){b.compress(Bitmap.CompressFormat.PNG,100,out);}
  }
-}
+               }
