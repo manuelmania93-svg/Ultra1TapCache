@@ -19,7 +19,7 @@
     <string name="ui_017" formatted="false">"Der Dienst ist in Android aktiviert, aber nicht mit der App verbunden. Schalte Ultra1TapCache in den Bedienungshilfen einmal aus und wieder ein. Danach zurück zur App. Es startet nichts automatisch.\n\n"</string>
     <string name="ui_018" formatted="false">"Bedienungshilfe nicht verbunden"</string>
     <string name="ui_019" formatted="false">"Bedienungshilfe aktivieren"</string>
-    <string name="ui_020" formatted="false">"Zum Reinigen braucht Ultra1TapCache die Bedienungshilfe. Öffne die Einstellungen, wähle Ultra1TapCache und aktiviere den Dienst. Danach zurück zur App und erneut auf Reinigen tippen. Es startet nichts automatisch.\n\nDie App öffnet nur App-Einstellungen und tippt auf Cache leeren. STOP bleibt sichtbar. Kein Internetzugriff.\n\nFalls Android den Schalter sperrt: App-Info &gt; Menü &gt; Eingeschränkte Einstellungen zulassen, dann die Bedienungshilfe aktivieren."</string>
+    <string name="ui_020" formatted="false">"Zum Reinigen braucht Ultra1TapCache die Bedienungshilfe. Öffne die Einstellungen, wähle Ultra1TapCache und aktiviere den Dienst. Danach zurück zur App und erneut auf Reinigen tippen. Es startet nichts automatisch.\n\nDie App öffnet nur App-Einstellungen und tippt auf Cache leeren. STOP bleibt sichtbar. Kein Internetzugriff.\n\nFalls Android den Schalter sperrt: App-Info &gt; Menü &gt; Eingeschränkte Einstellungen zulassen (falls angeboten), dann die Reinigungshilfe aktivieren."</string>
     <string name="ui_021" formatted="false">"Einstellungen öffnen"</string>
     <string name="ui_022" formatted="false">"Einstellungen nicht erreichbar"</string>
     <string name="ui_023" formatted="false">"Bitte Android-Einstellungen &gt; Bedienungshilfen &gt; Ultra1TapCache manuell öffnen."</string>
@@ -67,7 +67,7 @@
     <string name="ui_065" formatted="false">" mit 0 B • "</string>
     <string name="ui_066" formatted="false">" nicht messbar"</string>
     <string name="ui_067" formatted="false">"\nKeine vollständige Summe. Nur eigener Cache messbar."</string>
-    <string name="ui_068" formatted="false">"\nPrüftext: Nutzungszugriff antippen."</string>
+    <string name="ui_068" formatted="false">"\nTippe auf Cache-Zugriff erlauben für Hilfe und Details."</string>
     <string name="ui_069" formatted="false">"\nMesshinweis: "</string>
     <string name="ui_070" formatted="false">"Zugriff prüfen..."</string>
     <string name="ui_071" formatted="false">"✓ Cache-Zugriff bereit"</string>
