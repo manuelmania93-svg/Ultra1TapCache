@@ -66,7 +66,7 @@
     <string name="ui_064" formatted="false">" ausgewählt\n"</string>
     <string name="ui_065" formatted="false">" mit 0 B • "</string>
     <string name="ui_066" formatted="false">" nicht messbar"</string>
-    <string name="ui_067" formatted="false">"\nKeine vollständige Summe. Nur eigener Cache messbar.\nAppOps: "</string>
+    <string name="ui_067" formatted="false">"\nKeine vollständige Summe. Nur eigener Cache messbar."</string>
     <string name="ui_068" formatted="false">"\nPrüftext: Nutzungszugriff antippen."</string>
     <string name="ui_069" formatted="false">"\nMesshinweis: "</string>
     <string name="ui_070" formatted="false">"Zugriff prüfen..."</string>
