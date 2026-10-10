@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" formatted="false">"Ultra1TapCache"</string>
-    <string name="ui_001" formatted="false">"EXPERIMENT • RESUME 5"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • RESUME 6"</string>
     <string name="ui_002" formatted="false">"Nur Cache. Keine App-Daten."</string>
     <string name="ui_003" formatted="false">"GEMESSENER CACHE"</string>
     <string name="ui_004" formatted="false">"Nutzungszugriff aktivieren, dann scannen."</string>
@@ -108,7 +108,7 @@
     <string name="last_app" formatted="false">"Letzte App"</string>
     <string name="cleaning_speed" formatted="false">"Reinigungstempo"</string>
     <string name="speed_normal" formatted="false">"Normal"</string>
-    <string name="speed_turbo" formatted="false">"Turbo - kürzeste Wartezeiten"</string>
+    <string name="speed_turbo" formatted="false">"Turbo - schnellste Voreinstellung"</string>
     <string name="guided_setup_title">Ultra1TapCache einrichten</string>
     <string name="guided_usage">Zuerst den Nutzungszugriff erlauben, damit die App Cache messen kann. Tippe auf Einstellungen öffnen und aktiviere Ultra1TapCache. Komm danach für den nächsten Schritt zurück.</string>
     <string name="guided_helper">Als Nächstes den Reinigungshelfer in den Bedienungshilfen aktivieren. Falls Android eingeschränkte Einstellungen meldet: App-Info öffnen, die drei Punkte antippen und eingeschränkte Einstellungen zulassen, falls angeboten. Danach zurück zu den Bedienungshilfen. Die letzte Berechtigung musst du selbst bestätigen.</string>
