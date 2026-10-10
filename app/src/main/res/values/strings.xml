@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" formatted="false">"Ultra1TapCache"</string>
-    <string name="ui_001" formatted="false">"EXPERIMENT • RESUME 5"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • RESUME 6"</string>
     <string name="ui_002" formatted="false">"Clear cache. Keep your app data."</string>
     <string name="ui_003" formatted="false">"MEASURED CACHE"</string>
     <string name="ui_004" formatted="false">"Allow cache access, then scan your apps."</string>
@@ -108,7 +108,7 @@
     <string name="last_app" formatted="false">"Last app"</string>
     <string name="cleaning_speed" formatted="false">"Cleaning speed"</string>
     <string name="speed_normal" formatted="false">"Normal"</string>
-    <string name="speed_turbo" formatted="false">"Turbo - shortest waits"</string>
+    <string name="speed_turbo" formatted="false">"Turbo - fastest preset"</string>
     <string name="guided_setup_title">Set up Ultra1TapCache</string>
     <string name="guided_usage">First, allow usage access so the app can measure cache. Tap Open settings and enable Ultra1TapCache. Come back here for the next step.</string>
     <string name="guided_helper">Next, enable the cleaning helper in Accessibility settings. If Android says restricted settings, open App info, tap the three dots and allow restricted settings if offered. Then return to Accessibility settings. Android requires you to make the final permission choice yourself.</string>
