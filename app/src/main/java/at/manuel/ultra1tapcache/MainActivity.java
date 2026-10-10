@@ -65,6 +65,7 @@ public class MainActivity extends Activity {
         LinearLayout shortcuts=new LinearLayout(this);
         shortcuts.addView(button(getString(R.string.all_apps_settings),()->openAllApps()),new LinearLayout.LayoutParams(0,dp(48),1));
         shortcuts.addView(button(getString(R.string.open_app_info),()->openAppInfo()),new LinearLayout.LayoutParams(0,dp(48),1));root.addView(shortcuts);
+        root.addView(button(getString(R.string.diag_title),()->showRunDiagnostics()),new LinearLayout.LayoutParams(-1,dp(44)));
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
         toggles.addView(text(getString(R.string.cleaning_speed),13,WHITE,true));
         Spinner speed=new Spinner(this);String[] speedKeys={"normal","fast","turbo"};
@@ -134,6 +135,12 @@ public class MainActivity extends Activity {
                 try { startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
                 catch(RuntimeException e) { new AlertDialog.Builder(this).setTitle(getString(R.string.ui_022)).setMessage(getString(R.string.ui_023)).setPositiveButton(getString(R.string.ui_024),null).show(); }
             }).setNeutralButton(getString(R.string.open_app_info),(d,w)->showAndroidSetupHelp()).setNegativeButton(getString(R.string.ui_025),null).show();
+    }
+    private void showRunDiagnostics(){
+        String report=RunJournal.diagnostics(this);TextView content=text(report,13,WHITE,false);content.setTextIsSelectable(true);content.setPadding(dp(16),dp(8),dp(16),dp(8));ScrollView scroll=new ScrollView(this);scroll.addView(content);
+        new AlertDialog.Builder(this).setTitle(getString(R.string.diag_title)).setView(scroll).setMessage(getString(R.string.diag_privacy))
+            .setPositiveButton(getString(R.string.diag_share),(d,w)->{Intent send=new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT,getString(R.string.diag_title)).putExtra(Intent.EXTRA_TEXT,report);try{startActivity(Intent.createChooser(send,getString(R.string.diag_share)));}catch(RuntimeException e){showFeedback(getString(R.string.ui_040));}})
+            .setNegativeButton(getString(R.string.ui_024),null).show();
     }
     private void openAllApps(){
         try{startActivity(new Intent(Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS));}
