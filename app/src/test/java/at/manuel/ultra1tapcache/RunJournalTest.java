@@ -27,7 +27,7 @@ public class RunJournalTest {
   android.app.AlertDialog d=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();assertTrue(d.isShowing());save(d.getWindow().getDecorView(),"guided-setup.png",1000,1900,false);d.dismiss();m.invoke(a);assertFalse(d.isShowing());assertFalse(CleanerService.running);a.finish();AppScanner.readState=AppScanner.UNCHECKED;
  }
  @Test public void speedChangesWaitsNotSafetyOrProgress() {
-  assertEquals(250,CleanerService.waitFor("turbo",false));assertEquals(400,CleanerService.waitFor("turbo",true));assertEquals(650,CleanerService.waitFor("normal",false));assertEquals(900,CleanerService.waitFor("normal",true));assertEquals(1300,CleanerService.waitFor("slow",false));assertEquals(1800,CleanerService.waitFor("slow",true));
+  assertEquals(150,CleanerService.waitFor("turbo",false));assertEquals(250,CleanerService.waitFor("turbo",true));assertEquals(650,CleanerService.waitFor("normal",false));assertEquals(900,CleanerService.waitFor("normal",true));assertEquals(250,CleanerService.waitFor("fast",false));assertEquals(400,CleanerService.waitFor("fast",true));
  }
  @Test public void confirmedCheckpointSurvivesRereadAndSkipsOnlyVerified() {
   Context c=RuntimeEnvironment.getApplication();c.getSharedPreferences("clean_run",0).edit().clear().commit();
