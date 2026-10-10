@@ -42,9 +42,9 @@ public class CleanerService extends AccessibilityService {
 
     @Override protected void onServiceConnected() { connected = this; }
     static int waitFor(String speed,boolean after){
-        if("fast".equals(speed))return after?400:250;
+        if("fast".equals(speed))return after?550:400;
         if("normal".equals(speed))return after?900:650;
-        return after?250:150;
+        return after?400:250;
     }
     static boolean start(List<AppEntry> entries, boolean fast) {
         if (connected == null || running || entries.isEmpty()) return false;
