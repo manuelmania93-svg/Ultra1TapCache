@@ -68,6 +68,8 @@ public class MainActivity extends Activity {
             boolean select=apps.stream().noneMatch(a->a.selected); for(AppEntry a:apps) a.selected=select && !a.system && a.enabled && a.cacheBytes!=null && a.cacheBytes>0;
             renderList(); updateStatus();
         }); commands.addView(refresh,new LinearLayout.LayoutParams(0,dp(46),1)); commands.addView(all,new LinearLayout.LayoutParams(0,dp(46),1)); root.addView(commands);
+        Button allSystem=button(getString(R.string.select_all_system),()->confirmSelectAll());
+        root.addView(allSystem,new LinearLayout.LayoutParams(-1,dp(44)));
         ScrollView scroll=new ScrollView(this); list=new LinearLayout(this); list.setOrientation(LinearLayout.VERTICAL); scroll.addView(list); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         clean=button(getString(R.string.ui_012),()->requestClean()); clean.setTextColor(BG); clean.setBackground(round(CYAN,14)); root.addView(clean,new LinearLayout.LayoutParams(-1,dp(58)));
         TextView footer=text(getString(R.string.ui_013),10,MUTED,false); footer.setPadding(0,dp(8),0,0); root.addView(footer);
@@ -154,6 +156,16 @@ public class MainActivity extends Activity {
             row.setOnCheckedChangeListener((v,on)-> { a.selected=on; updateStatus(); }); list.addView(row,new LinearLayout.LayoutParams(-1,-2));
         }
         if(visible==0) { TextView t=text(getString(R.string.ui_048),13,MUTED,false); list.addView(t); }
+    }
+    static void selectAllMeasured(List<AppEntry> entries) {
+        for(AppEntry a:entries) a.selected=a.enabled && a.cacheBytes!=null && a.cacheBytes>0;
+    }
+    private void confirmSelectAll() {
+        if(scanning || CleanerService.running) return;
+        new AlertDialog.Builder(this).setTitle(getString(R.string.select_system_title))
+            .setMessage(getString(R.string.select_system_body))
+            .setPositiveButton(getString(R.string.select_confirm),(d,w)-> { selectAllMeasured(apps); renderList(); updateStatus(); })
+            .setNegativeButton(getString(R.string.ui_025),null).show();
     }
     private void requestClean() {
         if(CleanerService.running) { CleanerService.cancel(); return; }
