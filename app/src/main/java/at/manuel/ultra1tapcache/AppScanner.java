@@ -17,16 +17,55 @@ final class AppScanner {
     /** First failure seen during the last scan, shown in the UI so a failed measurement is never silent. */
     static volatile String lastError;
 
+    static final int UNCHECKED=0, VERIFIED=1, DENIED=2, UNKNOWN=3;
+    static volatile int readState=UNCHECKED;
+    static volatile String probePackage, probeError;
+
+    static int usageMode(Context c) {
+        try {
+            AppOpsManager ops=c.getSystemService(AppOpsManager.class);
+            if(ops==null) return -1;
+            return Build.VERSION.SDK_INT>=29
+                ? ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),c.getPackageName())
+                : ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),c.getPackageName());
+        } catch(RuntimeException e) { return -1; }
+    }
     static boolean hasUsage(Context c) {
-        AppOpsManager ops = c.getSystemService(AppOpsManager.class);
-        if (ops == null) return false;
-        int mode;
-        if (Build.VERSION.SDK_INT >= 29) mode = ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), c.getPackageName());
-        else mode = ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), c.getPackageName());
-        if (mode == AppOpsManager.MODE_ALLOWED) return true;
-        // Some ROMs (MIUI) report MODE_DEFAULT while the permission is granted.
-        return mode == AppOpsManager.MODE_DEFAULT
-            && c.checkSelfPermission("android.permission.PACKAGE_USAGE_STATS") == PackageManager.PERMISSION_GRANTED;
+        int mode=usageMode(c);
+        return mode==AppOpsManager.MODE_ALLOWED || (mode==AppOpsManager.MODE_DEFAULT
+            && c.checkSelfPermission("android.permission.PACKAGE_USAGE_STATS")==PackageManager.PERMISSION_GRANTED);
+    }
+    static int probeState(int successes,int denials) {
+        return successes>0 ? VERIFIED : denials>0 ? DENIED : UNKNOWN;
+    }
+    static String modeName(int mode) {
+        switch(mode) {
+            case AppOpsManager.MODE_ALLOWED:return "ALLOWED";
+            case AppOpsManager.MODE_DEFAULT:return "DEFAULT";
+            case AppOpsManager.MODE_IGNORED:return "IGNORED";
+            case AppOpsManager.MODE_ERRORED:return "ERRORED";
+            case AppOpsManager.MODE_FOREGROUND:return "FOREGROUND";
+            default:return "UNBEKANNT ("+mode+")";
+        }
+    }
+    // Own-UID stats need no grant. Probe only OTHER installed apps on the scan worker.
+    private static void probe(Context c,List<ApplicationInfo> candidates) {
+        readState=UNCHECKED; probePackage=null; probeError=null;
+        int successes=0,denials=0,attempts=0;
+        StorageStatsManager ssm=c.getSystemService(StorageStatsManager.class);
+        if(ssm!=null) for(ApplicationInfo info:candidates) {
+            if(info.uid==Process.myUid() || !info.enabled) continue;
+            if(Thread.currentThread().isInterrupted() || attempts++>=3) break;
+            probePackage=info.packageName;
+            UUID volume=info.storageUuid==null?StorageManager.UUID_DEFAULT:info.storageUuid;
+            try {
+                ssm.queryStatsForPackage(volume,info.packageName,Process.myUserHandle());
+                successes++; probeError=null; break;
+            } catch(SecurityException e) { denials++; probeError=e.getClass().getSimpleName()+": "+e.getMessage(); }
+            catch(Exception e) { if(probeError==null) probeError=e.getClass().getSimpleName()+": "+e.getMessage(); }
+        }
+        readState=probeState(successes,denials);
+        if(readState==DENIED) lastError=probeError;
     }
 
     private static void note(Exception e) {
@@ -71,11 +110,17 @@ final class AppScanner {
         lastError = null;
         PackageManager pm = c.getPackageManager();
         List<AppEntry> result = new ArrayList<>();
-        for (ApplicationInfo info : pm.getInstalledApplications(PackageManager.MATCH_DISABLED_COMPONENTS)) {
+        List<ApplicationInfo> candidates=new ArrayList<>();
+        for(ApplicationInfo info:pm.getInstalledApplications(PackageManager.MATCH_DISABLED_COMPONENTS)) {
+            boolean system=(info.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP))!=0;
+            if(eligible(system,hasLauncher(pm,info.packageName))) candidates.add(info);
+        }
+        probe(c,candidates);
+        for (ApplicationInfo info : candidates) {
             if (Thread.currentThread().isInterrupted()) break;
             boolean system = (info.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0;
             if (!eligible(system, hasLauncher(pm, info.packageName))) continue;
-            Long bytes = cache(c, info);
+            Long bytes = readState==DENIED && info.uid!=Process.myUid() ? null : cache(c, info);
             String label;
             try { label = info.loadLabel(pm).toString(); }
             catch (RuntimeException e) { label = info.packageName; }
