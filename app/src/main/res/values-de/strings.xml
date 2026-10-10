@@ -89,4 +89,8 @@
     <string name="ui_087" formatted="false">"Bedienungshilfe unterbrochen"</string>
     <string name="ui_088" formatted="false">"Dienst beendet"</string>
     <string name="service_description" formatted="false">"Nur während einer von dir gestarteten Reinigung: öffnet die Android-App-Einstellungen und tippt ausschließlich Cache leeren. Keine Datenlöschung, Werbung oder Internetzugriff. Unbekannte Bildschirme werden übersprungen. Du kannst jederzeit stoppen."</string>
+    <string name="setup_help" formatted="false">"Hilfe bei Android-Einstellungen"</string>
+    <string name="setup_title" formatted="false">"Android sperrt einen Schalter?"</string>
+    <string name="setup_steps" formatted="false">"Nur erlauben, wenn du der App vertraust. Die Bedienungshilfe kann den Bildschirm lesen und Apps bedienen.\n\n1. Unten auf App-Info öffnen tippen.\n2. Oben das Drei-Punkte-Menü öffnen.\n3. Eingeschränkte Einstellungen zulassen wählen, falls Android es anbietet, und den Anweisungen folgen.\n4. Zurück zur App, Nutzungszugriff und Reinigungshilfe aktivieren, dann neu scannen.\n\nKeine Menüoption? Vielleicht bereits erlaubt oder auf deiner Android-Version anders angeordnet. Öffne zuerst die Bedienungshilfen und tippe auf den gesperrten Schalter, um Androids Hinweis zu sehen. Die App kann die Sperre nicht umgehen oder selbst aufheben."</string>
+    <string name="open_app_info" formatted="false">"App-Info öffnen"</string>
 </resources>
