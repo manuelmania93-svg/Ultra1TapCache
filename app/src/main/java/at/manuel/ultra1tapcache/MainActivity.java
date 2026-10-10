@@ -3,6 +3,7 @@ package at.manuel.ultra1tapcache;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.ComponentName;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -76,9 +77,18 @@ public class MainActivity extends Activity {
     private void disclosure() {
         new AlertDialog.Builder(this).setTitle("Dein Cache. Deine Kontrolle.").setMessage("Ultra1TapCache ist ein Experiment. Android erlaubt das direkte Löschen fremder Caches nicht. Die Bedienungshilfe öffnet die App-Einstellungen und tippt auf Cache leeren.\n\nKeine Datenlöschung, keine Werbung, kein Netzwerk. STOP bleibt oben sichtbar. Unbekannte OEM-Bildschirme werden übersprungen. Cache kann sofort wieder wachsen; eine große Cache-Menge macht das Handy nicht automatisch langsam.").setPositiveButton("Verstanden",(d,w)->prefs.edit().putBoolean("disclosure_seen",true).apply()).setCancelable(false).show();
     }
+    private boolean accessibilityEnabled() {
+        String enabled=Settings.Secure.getString(getContentResolver(),Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        if(enabled==null) return false;
+        ComponentName target=new ComponentName(this,CleanerService.class);
+        for(String value:enabled.split(":")) if(target.equals(ComponentName.unflattenFromString(value))) return true;
+        return false;
+    }
     private void showAccessibilitySetup() {
-        new AlertDialog.Builder(this).setTitle("Bedienungshilfe aktivieren")
-            .setMessage("Zum Reinigen braucht Ultra1TapCache die Bedienungshilfe. Öffne die Einstellungen, wähle Ultra1TapCache und aktiviere den Dienst. Danach zurück zur App und erneut auf Reinigen tippen. Es startet nichts automatisch.\n\nDie App öffnet nur App-Einstellungen und tippt auf Cache leeren. STOP bleibt sichtbar. Kein Internetzugriff.\n\nFalls Android den Schalter sperrt: App-Info > Menü > Eingeschränkte Einstellungen zulassen, dann die Bedienungshilfe aktivieren.")
+        boolean enabled=accessibilityEnabled();
+        String disconnected=enabled?"Der Dienst ist in Android aktiviert, aber nicht mit der App verbunden. Schalte Ultra1TapCache in den Bedienungshilfen einmal aus und wieder ein. Danach zurück zur App. Es startet nichts automatisch.\n\n":"";
+        new AlertDialog.Builder(this).setTitle(enabled?"Bedienungshilfe nicht verbunden":"Bedienungshilfe aktivieren")
+            .setMessage(disconnected+"Zum Reinigen braucht Ultra1TapCache die Bedienungshilfe. Öffne die Einstellungen, wähle Ultra1TapCache und aktiviere den Dienst. Danach zurück zur App und erneut auf Reinigen tippen. Es startet nichts automatisch.\n\nDie App öffnet nur App-Einstellungen und tippt auf Cache leeren. STOP bleibt sichtbar. Kein Internetzugriff.\n\nFalls Android den Schalter sperrt: App-Info > Menü > Eingeschränkte Einstellungen zulassen, dann die Bedienungshilfe aktivieren.")
             .setPositiveButton("Einstellungen öffnen",(d,w)-> {
                 try { startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
                 catch(RuntimeException e) { new AlertDialog.Builder(this).setTitle("Einstellungen nicht erreichbar").setMessage("Bitte Android-Einstellungen > Bedienungshilfen > Ultra1TapCache manuell öffnen.").setPositiveButton("OK",null).show(); }
@@ -126,7 +136,10 @@ public class MainActivity extends Activity {
         boolean result=CleanerService.attempted>0;
         progress.setText(CleanerService.running?CleanerService.status:scanning?"Apps werden nach Cache sortiert...":result?
             CleanerService.status+"\n"+format(CleanerService.reclaimed)+" nachgemessen • "+CleanerService.verified+" bestätigt\n"+CleanerService.clicked+" Klicks • "+CleanerService.skipped+" unbestätigt/übersprungen":apps.size()+" Apps • "+selected+" ausgewählt • "+unknown+" nicht messbar");
-        usage.setText(AppScanner.hasUsage(this)?"✓ Nutzungszugriff":"1 Nutzungszugriff"); access.setText(CleanerService.connected!=null?"✓ Bedienungshilfe":"2 Bedienungshilfe");
+        usage.setText(AppScanner.hasUsage(this)?"✓ Nutzungszugriff":"1 Nutzungszugriff"); boolean enabled=accessibilityEnabled();
+        access.setText(CleanerService.connected!=null?"✓ Bedienungshilfe":enabled?"! Dienst getrennt":"2 Bedienungshilfe");
+        if(!CleanerService.running && !scanning && CleanerService.connected==null)
+            progress.append(enabled?"\nBedienungshilfe: aktiviert, aber nicht verbunden.":"\nBedienungshilfe: nicht aktiviert.");
         clean.setText(CleanerService.running?"STOP • ABBRECHEN":"1 TAP • "+selected+" APPS REINIGEN"); clean.setEnabled(true); refresh.setEnabled(!scanning && !CleanerService.running);
     }
     @Override protected void onResume() { super.onResume(); resumed=true; handler.post(update); if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
