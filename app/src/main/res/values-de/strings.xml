@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" formatted="false">"Ultra1TapCache"</string>
-    <string name="ui_001" formatted="false">"EXPERIMENT • LANGUAGE 4"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • RESUME 5"</string>
     <string name="ui_002" formatted="false">"Nur Cache. Keine App-Daten."</string>
     <string name="ui_003" formatted="false">"GEMESSENER CACHE"</string>
     <string name="ui_004" formatted="false">"Nutzungszugriff aktivieren, dann scannen."</string>
@@ -97,4 +97,13 @@
     <string name="select_system_title" formatted="false">"System-Apps mitmarkieren?"</string>
     <string name="select_system_body" formatted="false">"Auch Apps, die mit dem Handy geliefert wurden, etwa Chrome, werden markiert. Nur aktivierte Apps mit messbarem Cache werden ausgewählt. Das startet keine Reinigung. Du kannst danach jede App wieder abwählen."</string>
     <string name="select_confirm" formatted="false">"Alle markieren"</string>
+    <string name="resume_cleaning" formatted="false">"Unfertige Reinigung fortsetzen"</string>
+    <string name="resume_explain" formatted="false">"Bestätigte Apps werden in diesem gespeicherten Lauf übersprungen. Übrige Apps werden vor jedem Klick neu gemessen. Unbestätigte Apps können erneut versucht werden. STOP bleibt sichtbar. Erst Fortsetzen startet die Reinigung."</string>
+    <string name="remaining_apps" formatted="false">"Apps übrig"</string>
+    <string name="resume_failed" formatted="false">"Fortsetzen nicht möglich. Reinigungshilfe prüfen. Wenn die Messung nicht reagiert hat, die Hilfe aus- und einschalten, dann erneut versuchen."</string>
+    <string name="measure_timeout" formatted="false">"Androids Cache-Messung reagiert nicht. Fortschritt gespeichert. Reinigungshilfe vor dem Fortsetzen neu verbinden."</string>
+    <string name="engine_error" formatted="false">"Reinigung wegen Fehler gestoppt. Fortschritt gespeichert"</string>
+    <string name="process_stopped" formatted="false">"Voriger Lauf wurde außerhalb der App unterbrochen. Genaue Ursache unbekannt. Fortschritt gespeichert"</string>
+    <string name="confirmed_saved" formatted="false">"bestätigt und gespeichert"</string>
+    <string name="last_app" formatted="false">"Letzte App"</string>
 </resources>
