@@ -72,3 +72,15 @@ Priorität: ehrliche Messung und nachvollziehbarer Klickpfad. Kein breiter Rewri
 9. Android Developers, ActivityManager: https://developer.android.com/reference/android/app/ActivityManager
 
 Alle verwendeten Seiten wurden gelesen. Allgemeine API-Verträge und Android-15-Quellcode haben mehr Gewicht als Community-Vermutungen. Offene Grenze: keine Analyse der geschlossenen Hersteller-Firmware, keine Root-Dateimessung, kein Nachweis einer konkreten Brave-Ursache.
+
+## HISTORY 11: automatische Mess-Historie
+
+Dies ist eine eigene Heuristik, kein Zugriff auf Dateiarten und keine Android-Garantie:
+
+- Abnahme >4KB: bestätigt; Nachher-Wert, Datum und Paket-Version/Install-/Updatezeit werden gespeichert.
+- Frischer Scan innerhalb24h: liegt der aktuelle Wert höchstens um `max(64KB, min(1MB, Rest/20))` über dem gespeicherten Rest, wird er nicht erneut vorausgewählt. Aktuelle Bytes bleiben sichtbar.
+- Zwei vollständige akzeptierte Versuche ohne Abnahme: "versucht; unverändert", nicht "gereinigt". Ein stabiler Wert wird6h nicht erneut vorausgewählt. Keine Byte-Gutschrift.
+- Wachstum darüber, Zeitablauf, Update/Neuinstallation, fehlende Versionsdaten, Uhr-Rücksprung oder fehlende Messung: keine automatische Schonung aus der Historie.
+- Manuelle Auswahl bleibt möglich. Im Fortsetzen sind final bearbeitete unveränderte Fälle getrennt von bestätigten Fällen, statt endlos erneut zu laufen.
+
+Die Regel erkennt einen gemessenen Zustand wieder, nicht zuverlässig "welche einzelnen Dateien Rest-Cache sind". Zeitschwellen und Toleranz sind Produktentscheidungen. Ein später deutlich größerer Cache soll wieder zur Auswahl stehen.
