@@ -36,6 +36,7 @@ public class CleanerService extends AccessibilityService {
     private long deadline, nextAllowed;
     private int uiWait=250,afterWait=400;
     private long clickedAt;
+    private boolean clickRejected;
     private Button stopButton;
     private WindowManager wm;
     private final Runnable tick = () -> {try {step();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}};
@@ -82,7 +83,7 @@ public class CleanerService extends AccessibilityService {
         if (!running) return;
         index++;
         if (index >= queue.size()) { stop("finished",getString(R.string.ui_086)); return; }
-        attempted++;cacheClicked=storageOpened=identitySeen=measuring=false;preparing=true;appToken++;
+        attempted++;clickRejected=false;cacheClicked=storageOpened=identitySeen=measuring=false;preparing=true;appToken++;
         AppEntry app=queue.get(index);status=(index+1)+"/"+queue.size()+" • "+app.label;
         stopButton.setText("STOP • "+(index+1)+"/"+queue.size());
         RunJournal.state(this,app.packageName,"started",null,0);
@@ -124,7 +125,7 @@ public class CleanerService extends AccessibilityService {
     private void step() {
         if (!running || measuring || preparing) return;
         long now = SystemClock.uptimeMillis();
-        if (now >= deadline) { recordAndAdvance("settings_timeout",null,0); return; }
+        if (now >= deadline) { recordAndAdvance(clickRejected?"cache_click_rejected":identitySeen?"cache_button_not_found":"settings_timeout",null,0); return; }
         if (now < nextAllowed) { schedule(nextAllowed-now); return; }
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) { schedule(200); return; }
@@ -139,9 +140,9 @@ public class CleanerService extends AccessibilityService {
             if (!cacheClicked && cache != null) {
                 if (!cache.isEnabled()) { recordAndAdvance("cache_button_disabled",null,0); return; }
                 if (safeClick(cache)) {
-                    cacheClicked = true; clicked++;clickedAt=SystemClock.uptimeMillis(); nextAllowed = now + (afterWait);
+                    cacheClicked = true; clicked++;clickedAt=SystemClock.uptimeMillis();RunJournal.state(this,app.packageName,"clicked",null,0); nextAllowed = now + (afterWait);
                     schedule(afterWait); return;
-                }
+                } else clickRejected=true;
             }
             } finally { if(cache!=null && cache!=root)cache.recycle(); }
             if (cacheClicked) {
