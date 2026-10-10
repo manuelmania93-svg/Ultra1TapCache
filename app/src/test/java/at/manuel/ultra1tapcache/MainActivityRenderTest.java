@@ -76,6 +76,38 @@ public class MainActivityRenderTest {
   assertFalse(CleanerService.running); dialog.dismiss(); a.finish();
   android.provider.Settings.Secure.putString(context.getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,"");
  }
+ @Test public void deniedUsageShowsIncompleteTotalAndRealProbeDetails() throws Exception {
+  Context c=RuntimeEnvironment.getApplication();
+  c.getSharedPreferences("settings",0).edit().putBoolean("disclosure_seen",true).commit();
+  CleanerService.running=false; CleanerService.attempted=0;
+  AppScanner.readState=AppScanner.DENIED; AppScanner.probePackage="com.example.other";
+  AppScanner.probeError="SecurityException: PACKAGE_USAGE_STATS denied";
+  MainActivity a=Robolectric.buildActivity(MainActivity.class).create().get();
+  java.lang.reflect.Method status=MainActivity.class.getDeclaredMethod("updateStatus");status.setAccessible(true);status.invoke(a);
+  java.lang.reflect.Field total=MainActivity.class.getDeclaredField("total");total.setAccessible(true);
+  assertEquals("Zugriff fehlt",((android.widget.TextView)total.get(a)).getText().toString());
+  java.lang.reflect.Field usage=MainActivity.class.getDeclaredField("usage");usage.setAccessible(true);
+  android.widget.Button button=(android.widget.Button)usage.get(a);
+  assertEquals("! Zugriff verweigert",button.getText().toString()); button.performClick();
+  android.app.AlertDialog dialog=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();
+  assertTrue(org.robolectric.Shadows.shadowOf(dialog).getMessage().toString().contains("com.example.other"));
+  View v=a.getWindow().getDecorView();
+  v.measure(View.MeasureSpec.makeMeasureSpec(1080,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(2340,View.MeasureSpec.EXACTLY));v.layout(0,0,1080,2340);
+  saveView(v,"usage-denied.png");
+  v=dialog.getWindow().getDecorView();v.measure(View.MeasureSpec.makeMeasureSpec(1000,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(2200,View.MeasureSpec.AT_MOST));v.layout(0,0,1000,v.getMeasuredHeight());
+  saveView(v,"usage-dialog.png");
+  dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).performClick();
+  android.content.Intent launched=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();
+  assertEquals(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS,launched.getAction());
+  assertEquals("package:"+a.getPackageName(),launched.getDataString());
+  java.lang.reflect.Field recheck=MainActivity.class.getDeclaredField("recheckUsage");recheck.setAccessible(true);assertTrue(recheck.getBoolean(a));
+  assertFalse(CleanerService.running); a.finish(); AppScanner.readState=AppScanner.UNCHECKED;
+ }
+ private static void saveView(View v,String name) throws Exception {
+  Bitmap b=Bitmap.createBitmap(v.getWidth(),v.getHeight(),Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));
+  File f=new File("build/reports/ui/"+name);f.getParentFile().mkdirs();
+  try(FileOutputStream out=new FileOutputStream(f)){b.compress(Bitmap.CompressFormat.PNG,100,out);}
+ }
  private static class IntentCheck {
   static void assertAccessibilitySettings(MainActivity a) {
    android.content.Intent launched=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();
