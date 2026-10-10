@@ -4,6 +4,12 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ScannerRulesTest {
+    @Test public void selectAllIncludesMeasuredSystemAppsButNotUnavailableApps() {
+        java.util.List<AppEntry> apps=java.util.Arrays.asList(new AppEntry("user","User",10L),new AppEntry("system","System",20L,true,true),new AppEntry("disabled","Disabled",10L,false,false),new AppEntry("unknown","Unknown",null),new AppEntry("zero","Zero",0L));
+        MainActivity.selectAllMeasured(apps);
+        assertTrue(apps.get(0).selected);assertTrue(apps.get(1).selected);
+        assertFalse(apps.get(2).selected);assertFalse(apps.get(3).selected);assertFalse(apps.get(4).selected);
+    }
     @Test public void crossAppProbeDoesNotMistakeUnknownOrDeniedForVerified() {
         assertEquals(AppScanner.UNKNOWN,AppScanner.probeState(0,0));
         assertEquals(AppScanner.DENIED,AppScanner.probeState(0,3));
