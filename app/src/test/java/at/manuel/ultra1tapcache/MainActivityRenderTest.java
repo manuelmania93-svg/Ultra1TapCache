@@ -58,6 +58,23 @@ public class MainActivityRenderTest {
   IntentCheck.assertAccessibilitySettings(a);
   a.finish();
  }
+ @Test public void enabledButDisconnectedIsNotReportedAsMissingPermission() throws Exception {
+  Context context=RuntimeEnvironment.getApplication();
+  context.getSharedPreferences("settings",0).edit().putBoolean("disclosure_seen",true).commit();
+  android.provider.Settings.Secure.putString(context.getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+   new android.content.ComponentName(context,CleanerService.class).flattenToString());
+  CleanerService.connected=null; CleanerService.running=false;
+  MainActivity a=Robolectric.buildActivity(MainActivity.class).create().get();
+  java.lang.reflect.Method status=MainActivity.class.getDeclaredMethod("updateStatus"); status.setAccessible(true); status.invoke(a);
+  java.lang.reflect.Field access=MainActivity.class.getDeclaredField("access"); access.setAccessible(true);
+  assertEquals("! Dienst getrennt",((android.widget.Button)access.get(a)).getText().toString());
+  java.lang.reflect.Field clean=MainActivity.class.getDeclaredField("clean"); clean.setAccessible(true);
+  ((android.widget.Button)clean.get(a)).performClick();
+  android.app.AlertDialog dialog=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();
+  assertEquals("Bedienungshilfe nicht verbunden",org.robolectric.Shadows.shadowOf(dialog).getTitle().toString());
+  assertFalse(CleanerService.running); dialog.dismiss(); a.finish();
+  android.provider.Settings.Secure.putString(context.getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,"");
+ }
  private static class IntentCheck {
   static void assertAccessibilitySettings(MainActivity a) {
    android.content.Intent launched=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();
