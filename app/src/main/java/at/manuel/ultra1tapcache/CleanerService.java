@@ -209,7 +209,7 @@ public class CleanerService extends AccessibilityService {
     static String cut(String text,int max){return text.length()>max?text.substring(0,max)+"…":text;}
     static String nodeDescription(AccessibilityNodeInfo node){
         StringBuilder path=new StringBuilder();AccessibilityNodeInfo n=AccessibilityNodeInfo.obtain(node);
-        try{for(int depth=0;n!=null&&depth<8;depth++){if(depth>0)path.insert(0," / ");path.insert(0,String.valueOf(n.getClassName())+"#"+n.getViewIdResourceName());AccessibilityNodeInfo parent=n.getParent();n.recycle();n=parent;}}
+        try{for(int depth=0;n!=null&&depth<8;depth++){if(depth>0)path.insert(0," / ");AccessibilityNodeInfo parent=n.getParent();int position=-1;if(parent!=null)for(int i=0;i<parent.getChildCount();i++){AccessibilityNodeInfo c=parent.getChild(i);if(c!=null)try{if(c.equals(n)){position=i;break;}}finally{c.recycle();}}path.insert(0,String.valueOf(n.getClassName())+"#"+n.getViewIdResourceName()+"["+position+"]");n.recycle();n=parent;}}
         finally{if(n!=null)n.recycle();}
         return cut("text="+node.getText()+"; description="+node.getContentDescription()+"; path="+path,600);
     }
