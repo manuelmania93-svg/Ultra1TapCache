@@ -41,7 +41,8 @@ final class RunJournal {
         return result;
     }
     static int count(Context c,String state) {int count=0;JSONArray rows=read(c).optJSONArray("rows");if(rows!=null)for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null&&state.equals(r.optString("state")))count++;}return count;}
+    static boolean completed(Context c,String pkg){JSONArray rows=read(c).optJSONArray("rows");if(rows!=null)for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null&&pkg.equals(r.optString("pkg")))return done(r.optString("state"));}return false;}
     static void apply(Context c,List<AppEntry> apps) {JSONArray rows=read(c).optJSONArray("rows");if(rows==null)return;
-        for(AppEntry a:apps)for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null&&a.packageName.equals(r.optString("pkg"))&&done(r.optString("state"))){if(r.has("after"))a.cacheBytes=r.optLong("after");a.selected=false;}}
+        for(AppEntry a:apps)for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null&&a.packageName.equals(r.optString("pkg"))&&done(r.optString("state"))){a.selected=false;}}
     }
 }
