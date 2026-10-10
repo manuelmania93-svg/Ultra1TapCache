@@ -93,4 +93,8 @@
     <string name="setup_title" formatted="false">"Android sperrt einen Schalter?"</string>
     <string name="setup_steps" formatted="false">"Nur erlauben, wenn du der App vertraust. Die Bedienungshilfe kann den Bildschirm lesen und Apps bedienen.\n\n1. Unten auf App-Info öffnen tippen.\n2. Oben das Drei-Punkte-Menü öffnen.\n3. Eingeschränkte Einstellungen zulassen wählen, falls Android es anbietet, und den Anweisungen folgen.\n4. Zurück zur App, Nutzungszugriff und Reinigungshilfe aktivieren, dann neu scannen.\n\nKeine Menüoption? Vielleicht bereits erlaubt oder auf deiner Android-Version anders angeordnet. Öffne zuerst die Bedienungshilfen und tippe auf den gesperrten Schalter, um Androids Hinweis zu sehen. Die App kann die Sperre nicht umgehen oder selbst aufheben."</string>
     <string name="open_app_info" formatted="false">"App-Info öffnen"</string>
+    <string name="select_all_system" formatted="false">"Alle inkl. System-Apps markieren"</string>
+    <string name="select_system_title" formatted="false">"System-Apps mitmarkieren?"</string>
+    <string name="select_system_body" formatted="false">"Auch Apps, die mit dem Handy geliefert wurden, etwa Chrome, werden markiert. Nur aktivierte Apps mit messbarem Cache werden ausgewählt. Das startet keine Reinigung. Du kannst danach jede App wieder abwählen."</string>
+    <string name="select_confirm" formatted="false">"Alle markieren"</string>
 </resources>
