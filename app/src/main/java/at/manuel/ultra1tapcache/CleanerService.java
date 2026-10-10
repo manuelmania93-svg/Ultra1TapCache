@@ -96,7 +96,7 @@ public class CleanerService extends AccessibilityService {
                 app.cacheBytes=baseline;RunJournal.baseline(this,app.packageName,baseline);
                 if(baseline==0){recordAndAdvance("already_empty",0L,0);return;}
                 deadline=SystemClock.uptimeMillis()+12000;nextAllowed=SystemClock.uptimeMillis()+uiWait;
-                try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));scheduleuiWait; }
+                try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));schedule(uiWait); }
                 catch(RuntimeException e){recordAndAdvance("settings_failed",null,0);}
             });
         });
