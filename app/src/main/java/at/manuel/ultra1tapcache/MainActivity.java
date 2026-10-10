@@ -94,18 +94,26 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this).setTitle(getString(R.string.ui_014)).setMessage(getString(R.string.ui_015)).setPositiveButton(getString(R.string.ui_016),(d,w)->{prefs.edit().putBoolean("disclosure_seen",true).apply();handler.post(()->maybeGuideSetup());}).setCancelable(false).show();
     }
     static int missingSetupStep(boolean usageReady,boolean helperReady){return !usageReady?1:!helperReady?2:0;}
+    static boolean restrictedSetupPossible(int sdk,String installer,boolean helperEnabled){return sdk>=33&&!helperEnabled&&!"com.android.vending".equals(installer);}
+    private boolean possibleRestrictedSettings(){
+        String installer=null;
+        try{installer=getPackageManager().getInstallSourceInfo(getPackageName()).getInstallingPackageName();}catch(android.content.pm.PackageManager.NameNotFoundException|RuntimeException ignored){}
+        return restrictedSetupPossible(android.os.Build.VERSION.SDK_INT,installer,accessibilityEnabled());
+    }
     private void maybeGuideSetup(){
         if(!resumed||isFinishing()||CleanerService.running||setupPaused||!prefs.getBoolean("disclosure_seen",false)||setupDialog!=null)return;
         int step=missingSetupStep(AppScanner.hasUsage(this)&&AppScanner.readState!=AppScanner.DENIED,accessibilityEnabled()&&CleanerService.connected!=null);
+        if(possibleRestrictedSettings()&&(setupShown&4)==0)step=4;
         if(step==0||(setupShown&step)!=0)return;
+        final int targetStep=step;
         setupShown|=step;
         final boolean[] jumping={false};
         setupDialog=new AlertDialog.Builder(this).setTitle(getString(R.string.guided_setup_title))
-            .setMessage(getString(step==1?R.string.guided_usage:R.string.guided_helper))
-            .setPositiveButton(getString(step==1?R.string.ui_037:R.string.ui_021),(d,w)->{
-                jumping[0]=true;if(step==1)launchUsage(true);else {recheckUsage=true;try{startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));}catch(RuntimeException e){showFeedback(getString(R.string.ui_023));}}
+            .setMessage(getString(step==4?R.string.restricted_possible:step==1?R.string.guided_usage:R.string.guided_helper))
+            .setPositiveButton(getString(step==4?R.string.open_app_info:step==1?R.string.ui_037:R.string.ui_021),(d,w)->{
+                jumping[0]=true;if(targetStep==4)openAppInfo();else if(targetStep==1)launchUsage(true);else {recheckUsage=true;try{startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));}catch(RuntimeException e){showFeedback(getString(R.string.ui_023));}}
             })
-            .setNeutralButton(getString(R.string.open_app_info),(d,w)->{jumping[0]=true;openAppInfo();})
+            .setNeutralButton(getString(targetStep==4?R.string.setup_help:R.string.open_app_info),(d,w)->{jumping[0]=true;if(targetStep==4)showAndroidSetupHelp();else openAppInfo();})
             .setNegativeButton(getString(R.string.ui_025),null).create();
         setupDialog.setOnDismissListener(d->{setupDialog=null;if(!jumping[0])setupPaused=true;});setupDialog.show();
     }
