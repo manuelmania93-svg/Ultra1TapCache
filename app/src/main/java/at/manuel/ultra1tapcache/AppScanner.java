@@ -57,7 +57,10 @@ final class AppScanner {
         for (ApplicationInfo info : pm.getInstalledApplications(0)) {
             if (Thread.currentThread().isInterrupted()) break;
             if (info.packageName.equals(c.getPackageName()) || info.packageName.equals("com.android.settings") || !info.enabled) continue;
-            if (!includeSystem && (info.flags & ApplicationInfo.FLAG_SYSTEM) != 0) continue;
+            boolean system = (info.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+            // Preinstalled-but-user-facing apps (Chrome, Gmail, Google...) are system apps on many ROMs; 1Tap Cleaner counts them. Hide only pure background system apps.
+            boolean userFacing = (info.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0 || pm.getLaunchIntentForPackage(info.packageName) != null;
+            if (!includeSystem && system && !userFacing) continue;
             result.add(new AppEntry(info.packageName, info.loadLabel(pm).toString(), cache(c, info)));
         }
         result.sort((a,b) -> {
