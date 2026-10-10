@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" formatted="false">"Ultra1TapCache"</string>
-    <string name="ui_001" formatted="false">"EXPERIMENT • DIAG 8"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • FOCUS 9"</string>
     <string name="ui_002" formatted="false">"Clear cache. Keep your app data."</string>
     <string name="ui_003" formatted="false">"MEASURED CACHE"</string>
     <string name="ui_004" formatted="false">"Allow cache access, then scan your apps."</string>
@@ -145,4 +145,5 @@
     <string name="diag_enabled">"Enabled"</string>
     <string name="diag_disabled_seen">"Seen disabled"</string>
     <string name="diag_attempt">"Attempt"</string>
+    <string name="large_default_hint">After scanning, user apps over 1 MB are preselected. Smaller apps stay available via Select apps; system apps need explicit selection.</string>
 </resources>
