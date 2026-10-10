@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name" formatted="false">"Ultra1TapCache"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • LANGUAGE 4"</string>
+    <string name="ui_002" formatted="false">"Nur Cache. Keine App-Daten."</string>
+    <string name="ui_003" formatted="false">"GEMESSENER CACHE"</string>
+    <string name="ui_004" formatted="false">"Nutzungszugriff aktivieren, dann scannen."</string>
+    <string name="ui_005" formatted="false">"1  Cache-Zugriff erlauben"</string>
+    <string name="ui_006" formatted="false">"2  Reinigung einrichten"</string>
+    <string name="ui_007" formatted="false">"Turbo"</string>
+    <string name="ui_008" formatted="false">"Vor jeder Reinigung fragen"</string>
+    <string name="ui_009" formatted="false">"Apps ohne Cache anzeigen"</string>
+    <string name="ui_010" formatted="false">"Neu scannen"</string>
+    <string name="ui_011" formatted="false">"Alle / keine"</string>
+    <string name="ui_012" formatted="false">"1 TAP • CACHE LEEREN"</string>
+    <string name="ui_013" formatted="false">"Cache wird von Android verwaltet. Kein Geschwindigkeitsversprechen."</string>
+    <string name="ui_014" formatted="false">"Dein Cache. Deine Kontrolle."</string>
+    <string name="ui_015" formatted="false">"Ultra1TapCache ist ein Experiment. Android erlaubt das direkte Löschen fremder Caches nicht. Die Bedienungshilfe öffnet die App-Einstellungen und tippt auf Cache leeren.\n\nKeine Datenlöschung, keine Werbung, kein Netzwerk. STOP bleibt oben sichtbar. Unbekannte OEM-Bildschirme werden übersprungen. Cache kann sofort wieder wachsen; eine große Cache-Menge macht das Handy nicht automatisch langsam."</string>
+    <string name="ui_016" formatted="false">"Verstanden"</string>
+    <string name="ui_017" formatted="false">"Der Dienst ist in Android aktiviert, aber nicht mit der App verbunden. Schalte Ultra1TapCache in den Bedienungshilfen einmal aus und wieder ein. Danach zurück zur App. Es startet nichts automatisch.\n\n"</string>
+    <string name="ui_018" formatted="false">"Bedienungshilfe nicht verbunden"</string>
+    <string name="ui_019" formatted="false">"Bedienungshilfe aktivieren"</string>
+    <string name="ui_020" formatted="false">"Zum Reinigen braucht Ultra1TapCache die Bedienungshilfe. Öffne die Einstellungen, wähle Ultra1TapCache und aktiviere den Dienst. Danach zurück zur App und erneut auf Reinigen tippen. Es startet nichts automatisch.\n\nDie App öffnet nur App-Einstellungen und tippt auf Cache leeren. STOP bleibt sichtbar. Kein Internetzugriff.\n\nFalls Android den Schalter sperrt: App-Info &gt; Menü &gt; Eingeschränkte Einstellungen zulassen, dann die Bedienungshilfe aktivieren."</string>
+    <string name="ui_021" formatted="false">"Einstellungen öffnen"</string>
+    <string name="ui_022" formatted="false">"Einstellungen nicht erreichbar"</string>
+    <string name="ui_023" formatted="false">"Bitte Android-Einstellungen &gt; Bedienungshilfen &gt; Ultra1TapCache manuell öffnen."</string>
+    <string name="ui_024" formatted="false">"OK"</string>
+    <string name="ui_025" formatted="false">"Abbrechen"</string>
+    <string name="ui_026" formatted="false">"Reinigung"</string>
+    <string name="ui_027" formatted="false">"Fremde App erfolgreich gelesen"</string>
+    <string name="ui_028" formatted="false">"Anzeige erlaubt, echter Zugriff verweigert"</string>
+    <string name="ui_029" formatted="false">"Echter Zugriff verweigert"</string>
+    <string name="ui_030" formatted="false">"Echter Zugriff noch nicht bestätigt"</string>
+    <string name="ui_031" formatted="false">"\nAppOps: "</string>
+    <string name="ui_032" formatted="false">" • UID: "</string>
+    <string name="ui_033" formatted="false">"\nPaket: "</string>
+    <string name="ui_034" formatted="false">"\nTest-App: "</string>
+    <string name="ui_035" formatted="false">"Nutzungszugriff prüfen"</string>
+    <string name="ui_036" formatted="false">"\n\nÖffne den Nutzungszugriff für Ultra1TapCache. Falls bereits erlaubt: einmal aus- und einschalten. Zurück in der App wird automatisch neu gemessen.\n\nFalls der Schalter gesperrt ist: App-Info &gt; Menü &gt; Eingeschränkte Einstellungen zulassen (nur falls angeboten). Bei weiterem Fehler: Gerät neu starten und diesen Prüftext zusammen mit der erlaubten Einstellung zeigen. Neuinstallation ist dafür nicht nötig."</string>
+    <string name="ui_037" formatted="false">"App-Eintrag"</string>
+    <string name="ui_038" formatted="false">"Gesamte Liste"</string>
+    <string name="ui_039" formatted="false">"App-Info"</string>
+    <string name="ui_040" formatted="false">"Bitte App-Info für Ultra1TapCache manuell öffnen."</string>
+    <string name="ui_041" formatted="false">"Bitte Einstellungen &gt; Spezieller App-Zugriff &gt; Nutzungszugriff manuell öffnen."</string>
+    <string name="ui_042" formatted="false">"Cache-Größen werden gelesen..."</string>
+    <string name="ui_043" formatted="false">"Noch keine Apps. Tippe auf Neu scannen."</string>
+    <string name="ui_044" formatted="false">" [System-App]"</string>
+    <string name="ui_045" formatted="false">" [deaktiviert]"</string>
+    <string name="ui_046" formatted="false">"\n"</string>
+    <string name="ui_047" formatted="false">"Nicht messbar"</string>
+    <string name="ui_048" formatted="false">"Alle gescannten Apps haben 0 B Cache. Zum Anzeigen den 0-B-Schalter einschalten."</string>
+    <string name="ui_049" formatted="false">"Der Scan läuft noch. Bitte kurz warten und danach erneut auf Reinigen tippen."</string>
+    <string name="ui_050" formatted="false">"Keine Apps ausgewählt. Wähle mindestens eine App mit Cache aus oder starte einen neuen Scan."</string>
+    <string name="ui_051" formatted="false">"Reinigung konnte nicht starten. "</string>
+    <string name="ui_052" formatted="false">"\nBitte den Bedienungshilfe-Dienst prüfen und erneut versuchen."</string>
+    <string name="ui_053" formatted="false">" Apps reinigen?"</string>
+    <string name="ui_054" formatted="false">"Nur Cache leeren. STOP bleibt auf dem Bildschirm. Nicht erkennbare System-Einstellungen werden übersprungen. Bitte währenddessen nicht selbst durch die Einstellungen navigieren."</string>
+    <string name="ui_055" formatted="false">"Reinigen"</string>
+    <string name="ui_056" formatted="false">"Scan..."</string>
+    <string name="ui_057" formatted="false">"Zugriff nötig"</string>
+    <string name="ui_058" formatted="false">"Apps werden nach Cache sortiert..."</string>
+    <string name="ui_059" formatted="false">" nachgemessen • "</string>
+    <string name="ui_060" formatted="false">" bestätigt\n"</string>
+    <string name="ui_061" formatted="false">" Klicks • "</string>
+    <string name="ui_062" formatted="false">" unbestätigt/übersprungen"</string>
+    <string name="ui_063" formatted="false">" Apps gescannt • "</string>
+    <string name="ui_064" formatted="false">" ausgewählt\n"</string>
+    <string name="ui_065" formatted="false">" mit 0 B • "</string>
+    <string name="ui_066" formatted="false">" nicht messbar"</string>
+    <string name="ui_067" formatted="false">"\nKeine vollständige Summe. Nur eigener Cache messbar.\nAppOps: "</string>
+    <string name="ui_068" formatted="false">"\nPrüftext: Nutzungszugriff antippen."</string>
+    <string name="ui_069" formatted="false">"\nMesshinweis: "</string>
+    <string name="ui_070" formatted="false">"Zugriff prüfen..."</string>
+    <string name="ui_071" formatted="false">"✓ Cache-Zugriff bereit"</string>
+    <string name="ui_072" formatted="false">"! Cache-Zugriff erlauben"</string>
+    <string name="ui_073" formatted="false">"1 Cache-Zugriff erlauben"</string>
+    <string name="ui_074" formatted="false">"✓ Reinigung bereit"</string>
+    <string name="ui_075" formatted="false">"! Helfer neu verbinden"</string>
+    <string name="ui_076" formatted="false">"2 Reinigung einrichten"</string>
+    <string name="ui_077" formatted="false">"\nBedienungshilfe: aktiviert, aber nicht verbunden."</string>
+    <string name="ui_078" formatted="false">"\nBedienungshilfe: nicht aktiviert."</string>
+    <string name="ui_079" formatted="false">"STOP • ABBRECHEN"</string>
+    <string name="ui_080" formatted="false">"1 TAP • "</string>
+    <string name="ui_081" formatted="false">" APPS REINIGEN"</string>
+    <string name="ui_082" formatted="false">"Bereit"</string>
+    <string name="ui_083" formatted="false">"Abgebrochen"</string>
+    <string name="ui_084" formatted="false">"STOP • Ultra1TapCache"</string>
+    <string name="ui_085" formatted="false">"Stopp-Schaltfläche nicht verfügbar. Keine Reinigung gestartet."</string>
+    <string name="ui_086" formatted="false">"Reinigung beendet"</string>
+    <string name="ui_087" formatted="false">"Bedienungshilfe unterbrochen"</string>
+    <string name="ui_088" formatted="false">"Dienst beendet"</string>
+    <string name="service_description" formatted="false">"Nur während einer von dir gestarteten Reinigung: öffnet die Android-App-Einstellungen und tippt ausschließlich Cache leeren. Keine Datenlöschung, Werbung oder Internetzugriff. Unbekannte Bildschirme werden übersprungen. Du kannst jederzeit stoppen."</string>
+</resources>
