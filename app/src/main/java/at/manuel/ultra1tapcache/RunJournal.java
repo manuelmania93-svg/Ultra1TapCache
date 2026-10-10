@@ -10,6 +10,24 @@ import java.util.List;
 /** Local checkpoint for one user-started session. Never starts automation by itself. */
 final class RunJournal {
     private static SharedPreferences prefs(Context c) { return c.getSharedPreferences("clean_run",Context.MODE_PRIVATE); }
+    static JSONObject history(Context c){try{return new JSONObject(c.getSharedPreferences("cache_history",Context.MODE_PRIVATE).getString("apps","{}"));}catch(Exception e){return new JSONObject();}}
+    static String stamp(Context c,String pkg){try{android.content.pm.PackageInfo p=c.getPackageManager().getPackageInfo(pkg,0);return p.getLongVersionCode()+":"+p.firstInstallTime+":"+p.lastUpdateTime;}catch(Exception e){return "";}}
+    static long tolerance(long baseline){return Math.max(65536L,Math.min(1048576L,baseline/20));}
+    static boolean stable(Long current,long baseline){return current!=null&&current<=baseline+tolerance(baseline);}
+    static int classify(JSONObject h,Long current,String stamp,long now){
+        if(h==null||current==null||stamp.isEmpty()||!stamp.equals(h.optString("stamp")))return 0;
+        long time=h.optLong("time"),age=now-time;if(time<=0||age<0||!stable(current,h.optLong("after")))return 0;
+        String state=h.optString("state");
+        if("confirmed".equals(state)&&age<=86400000L)return 1;
+        if("attempted_unchanged".equals(state)&&age<=21600000L)return 2;
+        return 0;
+    }
+    static int historyStatus(Context c,AppEntry app){return classify(history(c).optJSONObject(app.packageName),app.cacheBytes,stamp(c,app.packageName),System.currentTimeMillis());}
+    static void remember(Context c,String pkg,String state,Long after){
+        if(after==null)return;String stamp=stamp(c,pkg);if(stamp.isEmpty())return;
+        JSONObject h=history(c);try{JSONObject r=new JSONObject();r.put("state",state);r.put("after",after);r.put("stamp",stamp);r.put("time",System.currentTimeMillis());h.put(pkg,r);if(!c.getSharedPreferences("cache_history",Context.MODE_PRIVATE).edit().putString("apps",h.toString()).commit())throw new IllegalStateException("History write failed");}catch(org.json.JSONException e){throw new IllegalStateException(e);}
+    }
+    static void applyHistory(Context c,List<AppEntry> apps){JSONObject h=history(c);long now=System.currentTimeMillis();for(AppEntry a:apps)if(classify(h.optJSONObject(a.packageName),a.cacheBytes,stamp(c,a.packageName),now)>0)a.selected=false;}
     static JSONObject read(Context c) {
         try { return new JSONObject(prefs(c).getString("run","{}")); }
         catch(Exception e) { return new JSONObject(); }
@@ -37,7 +55,7 @@ final class RunJournal {
     static void detail(Context c,String pkg,String key,String value){JSONObject run=read(c);JSONArray rows=run.optJSONArray("rows");if(rows==null)return;try{for(int i=0;i<rows.length();i++){JSONObject r=rows.getJSONObject(i);if(pkg.equals(r.optString("pkg"))){r.put(key,CleanerService.cut(value,1200));break;}}write(c,run);}catch(org.json.JSONException e){throw new IllegalStateException(e);}}
     static boolean residual(Context c,String pkg){JSONArray rows=read(c).optJSONArray("rows");if(rows!=null)for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null&&pkg.equals(r.optString("pkg")))return "confirmed".equals(r.optString("state"))&&r.optLong("after")>0;}return false;}
     static void reason(Context c,String reason) {JSONObject run=read(c);try {run.put("reason",reason);write(c,run);}catch(org.json.JSONException e){throw new IllegalStateException(e);} }
-    static boolean done(String state) {return "confirmed".equals(state)||"already_empty".equals(state)||"small_cache_skipped".equals(state);}
+    static boolean done(String state) {return "confirmed".equals(state)||"already_empty".equals(state)||"small_cache_skipped".equals(state)||"attempted_unchanged".equals(state);}
     static List<AppEntry> remaining(Context c) {
         List<AppEntry> result=new ArrayList<>();JSONArray rows=read(c).optJSONArray("rows");if(rows==null)return result;
         for(int i=0;i<rows.length();i++) {JSONObject row=rows.optJSONObject(i);if(row==null||done(row.optString("state")))continue;
@@ -46,7 +64,7 @@ final class RunJournal {
     }
     static int count(Context c,String state) {int count=0;JSONArray rows=read(c).optJSONArray("rows");if(rows!=null)for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null&&state.equals(r.optString("state")))count++;}return count;}
     static String reasonLabel(Context c,String state){
-        int id="small_cache_skipped".equals(state)?R.string.diag_small:"tiny_decrease".equals(state)?R.string.diag_tiny:"confirmed".equals(state)?R.string.diag_confirmed:"already_empty".equals(state)?R.string.diag_empty:"unconfirmed".equals(state)?R.string.diag_unchanged:"unmeasurable".equals(state)?R.string.diag_null:"cache_click_rejected".equals(state)?R.string.diag_click_rejected:"cache_button_disabled".equals(state)?R.string.diag_disabled:"cache_button_not_found".equals(state)?R.string.diag_not_found:"settings_timeout".equals(state)?R.string.diag_timeout:"settings_failed".equals(state)?R.string.diag_settings_failed:"clicked".equals(state)?R.string.diag_clicked:"started".equals(state)?R.string.diag_started:R.string.diag_pending;
+        int id="attempted_unchanged".equals(state)?R.string.diag_attempted:"small_cache_skipped".equals(state)?R.string.diag_small:"tiny_decrease".equals(state)?R.string.diag_tiny:"confirmed".equals(state)?R.string.diag_confirmed:"already_empty".equals(state)?R.string.diag_empty:"unconfirmed".equals(state)?R.string.diag_unchanged:"unmeasurable".equals(state)?R.string.diag_null:"cache_click_rejected".equals(state)?R.string.diag_click_rejected:"cache_button_disabled".equals(state)?R.string.diag_disabled:"cache_button_not_found".equals(state)?R.string.diag_not_found:"settings_timeout".equals(state)?R.string.diag_timeout:"settings_failed".equals(state)?R.string.diag_settings_failed:"clicked".equals(state)?R.string.diag_clicked:"started".equals(state)?R.string.diag_started:R.string.diag_pending;
         return c.getString(id)+" ["+state+"]";
     }
     static String diagnostics(Context c){JSONObject run=read(c);JSONArray rows=run.optJSONArray("rows");if(rows==null)return c.getString(R.string.diag_no_run);
