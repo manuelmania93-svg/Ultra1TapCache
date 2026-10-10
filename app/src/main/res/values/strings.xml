@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" formatted="false">"Ultra1TapCache"</string>
-    <string name="ui_001" formatted="false">"EXPERIMENT • LANGUAGE 4"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • RESUME 5"</string>
     <string name="ui_002" formatted="false">"Clear cache. Keep your app data."</string>
     <string name="ui_003" formatted="false">"MEASURED CACHE"</string>
     <string name="ui_004" formatted="false">"Allow cache access, then scan your apps."</string>
@@ -97,4 +97,13 @@
     <string name="select_system_title" formatted="false">"Include system apps?"</string>
     <string name="select_system_body" formatted="false">"This also selects apps supplied with your phone, such as Chrome. Only enabled apps with measured cache are selected. This does not start cleaning. You can deselect any app afterwards."</string>
     <string name="select_confirm" formatted="false">"Select all"</string>
+    <string name="resume_cleaning" formatted="false">"Resume unfinished clean"</string>
+    <string name="resume_explain" formatted="false">"Confirmed apps are skipped for this saved run. Remaining apps are measured again before any tap. This may retry unconfirmed apps. STOP stays visible. Cleaning only starts when you tap Resume."</string>
+    <string name="remaining_apps" formatted="false">"apps remaining"</string>
+    <string name="resume_failed" formatted="false">"Could not resume. Check the cleaning helper. If cache measurement timed out, turn the helper off and on before trying again."</string>
+    <string name="measure_timeout" formatted="false">"Android cache measurement did not respond. Progress saved. Reconnect the cleaning helper before resuming."</string>
+    <string name="engine_error" formatted="false">"Cleaning stopped due to an error. Progress saved"</string>
+    <string name="process_stopped" formatted="false">"Previous run was interrupted outside the app. Exact cause unknown. Progress saved"</string>
+    <string name="confirmed_saved" formatted="false">"confirmed and saved"</string>
+    <string name="last_app" formatted="false">"Last app"</string>
 </resources>
