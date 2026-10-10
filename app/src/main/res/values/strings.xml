@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" formatted="false">"Ultra1TapCache"</string>
-    <string name="ui_001" formatted="false">"EXPERIMENT • DIALOG 10"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • HISTORY 11"</string>
     <string name="ui_002" formatted="false">"Clear cache. Keep your app data."</string>
     <string name="ui_003" formatted="false">"MEASURED CACHE"</string>
     <string name="ui_004" formatted="false">"Allow cache access, then scan your apps."</string>
@@ -148,4 +148,9 @@
     <string name="large_default_hint">After scanning, user apps over 1 MB are preselected. Smaller apps stay available via Select apps; system apps need explicit selection.</string>
     <string name="residual_saved">" (done; residual cache)"</string>
     <string name="residual_hint">Measured decrease; residual cache remains. Android or the app may keep or recreate it. Zero is not required.</string>
+    <string name="unchanged_saved">" (attempted; unchanged)"</string>
+    <string name="diag_attempted">No decrease after 2 attempts; not confirmed</string>
+    <string name="attempted_count">attempted, unchanged</string>
+    <string name="history_hint">Automatic history: a confirmed residual is not preselected again for up to 24 hours; unchanged after 2 attempts for up to 6 hours. Growth, app update or reinstall makes it eligible again. Manual selection stays available.</string>
+    <string name="history_title">Automatic cache history</string>
 </resources>
