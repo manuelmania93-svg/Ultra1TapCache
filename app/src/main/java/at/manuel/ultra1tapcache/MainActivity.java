@@ -57,6 +57,8 @@ public class MainActivity extends Activity {
         progress=text(getString(R.string.ui_004),12,MUTED,false); hero.addView(progress); root.addView(hero);
         LinearLayout permissions=new LinearLayout(this); usage=button(getString(R.string.ui_005),()->openUsage()); access=button(getString(R.string.ui_006),()->showAccessibilitySetup());
         permissions.addView(usage,new LinearLayout.LayoutParams(0,dp(48),1)); permissions.addView(access,new LinearLayout.LayoutParams(0,dp(48),1)); root.addView(permissions);
+        Button setup=button(getString(R.string.setup_help),()->showAndroidSetupHelp());
+        root.addView(setup,new LinearLayout.LayoutParams(-1,dp(44)));
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
         toggles.addView(toggle(getString(R.string.ui_007), "turbo", true, null));
         toggles.addView(toggle(getString(R.string.ui_008), "ask", true, null));
@@ -92,7 +94,18 @@ public class MainActivity extends Activity {
             .setPositiveButton(getString(R.string.ui_021),(d,w)-> {
                 try { startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
                 catch(RuntimeException e) { new AlertDialog.Builder(this).setTitle(getString(R.string.ui_022)).setMessage(getString(R.string.ui_023)).setPositiveButton(getString(R.string.ui_024),null).show(); }
-            }).setNegativeButton(getString(R.string.ui_025),null).show();
+            }).setNeutralButton(getString(R.string.open_app_info),(d,w)->showAndroidSetupHelp()).setNegativeButton(getString(R.string.ui_025),null).show();
+    }
+    private void openAppInfo() {
+        recheckUsage=true;
+        try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))); }
+        catch(RuntimeException e) { recheckUsage=false; showFeedback(getString(R.string.ui_040)); }
+    }
+    private void showAndroidSetupHelp() {
+        new AlertDialog.Builder(this).setTitle(getString(R.string.setup_title))
+            .setMessage(getString(R.string.setup_steps))
+            .setPositiveButton(getString(R.string.open_app_info),(d,w)->openAppInfo())
+            .setNegativeButton(getString(R.string.ui_025),null).show();
     }
     private void showFeedback(String message) {
         new AlertDialog.Builder(this).setTitle(getString(R.string.ui_026)).setMessage(message).setPositiveButton(getString(R.string.ui_024),null).show();
@@ -108,11 +121,7 @@ public class MainActivity extends Activity {
             .setMessage(details+getString(R.string.ui_036))
             .setPositiveButton(getString(R.string.ui_037),(d,w)->launchUsage(true))
             .setNeutralButton(getString(R.string.ui_038),(d,w)->launchUsage(false))
-            .setNegativeButton(getString(R.string.ui_039),(d,w)-> {
-                recheckUsage=true;
-                try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))); }
-                catch(RuntimeException e) { recheckUsage=false; showFeedback(getString(R.string.ui_040)); }
-            }).show();
+            .setNegativeButton(getString(R.string.ui_039),(d,w)->showAndroidSetupHelp()).show();
     }
     private void launchUsage(boolean specific) {
         recheckUsage=true;
