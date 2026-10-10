@@ -2,6 +2,7 @@ package at.manuel.ultra1tapcache;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.net.Uri;
