@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" formatted="false">"Ultra1TapCache"</string>
-    <string name="ui_001" formatted="false">"EXPERIMENT • DIAG 7"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • DIAG 8"</string>
     <string name="ui_002" formatted="false">"Clear cache. Keep your app data."</string>
     <string name="ui_003" formatted="false">"MEASURED CACHE"</string>
     <string name="ui_004" formatted="false">"Allow cache access, then scan your apps."</string>
@@ -137,4 +137,12 @@
     <string name="diag_share">Share diagnostics</string>
     <string name="diag_privacy">Contains installed app names, packages and cache sizes. Review before sharing. A byte decrease is evidence of a decrease, not proof that all cache is empty.</string>
     <string name="diag_click_rejected">Cache click rejected or unsafe target</string>
+    <string name="diag_small">Small cache (up to 16 KB), skipped, not empty</string>
+    <string name="diag_tiny">Tiny decrease (up to 4 KB), not confirmed</string>
+    <string name="diag_click">Click accepted</string>
+    <string name="small_saved">" (small cache, skipped)"</string>
+    <string name="small_count">"small caches skipped"</string>
+    <string name="diag_enabled">"Enabled"</string>
+    <string name="diag_disabled_seen">"Seen disabled"</string>
+    <string name="diag_attempt">"Attempt"</string>
 </resources>
