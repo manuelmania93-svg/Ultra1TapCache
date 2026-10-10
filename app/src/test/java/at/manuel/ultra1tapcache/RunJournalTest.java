@@ -8,6 +8,9 @@ import org.robolectric.annotation.Config;
 import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class) @Config(sdk=35,qualifiers="de-w411dp-h891dp-420dpi") @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
 public class RunJournalTest {
+ @Test public void speedChangesWaitsNotSafetyOrProgress() {
+  assertEquals(250,CleanerService.waitFor("turbo",false));assertEquals(400,CleanerService.waitFor("turbo",true));assertEquals(650,CleanerService.waitFor("normal",false));assertEquals(900,CleanerService.waitFor("normal",true));assertEquals(1300,CleanerService.waitFor("slow",false));assertEquals(1800,CleanerService.waitFor("slow",true));
+ }
  @Test public void confirmedCheckpointSurvivesRereadAndSkipsOnlyVerified() {
   Context c=RuntimeEnvironment.getApplication();c.getSharedPreferences("clean_run",0).edit().clear().commit();
   java.util.List<AppEntry> apps=java.util.Arrays.asList(new AppEntry("a","A",100L),new AppEntry("b","B",200L,true,true),new AppEntry("c","C",50L));
