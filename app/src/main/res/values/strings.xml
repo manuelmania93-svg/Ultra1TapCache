@@ -93,4 +93,8 @@
     <string name="setup_title" formatted="false">"Android blocks a setting?"</string>
     <string name="setup_steps" formatted="false">"Only allow this if you trust the app. Accessibility can read your screen and interact with apps.\n\n1. Tap Open app info below.\n2. Open the three-dot menu at the top.\n3. Choose Allow restricted settings, if Android offers it, and follow its instructions.\n4. Return here, enable Usage access and the cleaning helper, then scan again.\n\nNo menu option? It may already be allowed or this Android version uses a different path. Open Accessibility first and tap the blocked switch to read Android\'s guidance. We cannot bypass the restriction or remove it automatically."</string>
     <string name="open_app_info" formatted="false">"Open app info"</string>
+    <string name="select_all_system" formatted="false">"Select all, including system apps"</string>
+    <string name="select_system_title" formatted="false">"Include system apps?"</string>
+    <string name="select_system_body" formatted="false">"This also selects apps supplied with your phone, such as Chrome. Only enabled apps with measured cache are selected. This does not start cleaning. You can deselect any app afterwards."</string>
+    <string name="select_confirm" formatted="false">"Select all"</string>
 </resources>
