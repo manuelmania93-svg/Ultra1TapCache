@@ -8,6 +8,12 @@ import org.robolectric.annotation.Config;
 import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class) @Config(sdk=35,qualifiers="de-w411dp-h891dp-420dpi") @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
 public class RunJournalTest {
+ @Test public void verificationRetriesAreBoundedAndNeverPromoteUnchangedBytes() {
+  assertEquals(300,CleanerService.retryDelay(1));assertEquals(450,CleanerService.retryDelay(2));assertEquals(-1,CleanerService.retryDelay(3));assertFalse(CleanerService.measuredDecrease(100L,100L));assertFalse(CleanerService.measuredDecrease(100L,120L));assertFalse(CleanerService.measuredDecrease(100L,null));assertTrue(CleanerService.measuredDecrease(100L,20L));
+ }
+ @Test public void measurementDiagnosticsSurviveJournalReread() {
+  Context c=RuntimeEnvironment.getApplication();RunJournal.begin(c,java.util.Arrays.asList(new AppEntry("x","X",500L)));RunJournal.measurement(c,"x",500L,2,800);org.json.JSONObject row=RunJournal.read(c).optJSONArray("rows").optJSONObject(0);assertEquals(500,row.optLong("baseline"));assertEquals(500,row.optLong("after"));assertEquals(2,row.optInt("measurement_reads"));assertEquals(800,row.optLong("click_to_read_ms"));assertEquals(1,RunJournal.remaining(c).size());c.getSharedPreferences("clean_run",0).edit().clear().commit();
+ }
  @Test public void freshScanDeselectsConfirmedButKeepsLiveBytesAndUnconfirmed() throws Exception {
   Context c=RuntimeEnvironment.getApplication();AppEntry done=new AppEntry("done","Done",100L);AppEntry pending=new AppEntry("pending","Pending",200L);java.util.List<AppEntry> original=java.util.Arrays.asList(done,pending);RunJournal.begin(c,original);RunJournal.state(c,"done","confirmed",0L,100);RunJournal.state(c,"pending","unconfirmed",200L,0);RunJournal.reason(c,"finished");
   AppEntry freshDone=new AppEntry("done","Done",20L);AppEntry freshPending=new AppEntry("pending","Pending",200L);freshDone.selected=freshPending.selected=true;RunJournal.apply(c,java.util.Arrays.asList(freshDone,freshPending));assertFalse(freshDone.selected);assertTrue(freshPending.selected);assertEquals(Long.valueOf(20),freshDone.cacheBytes);assertTrue(RunJournal.completed(c,"done"));assertFalse(RunJournal.completed(c,"pending"));
