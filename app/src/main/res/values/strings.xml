@@ -113,4 +113,5 @@
     <string name="guided_setup_title">Set up Ultra1TapCache</string>
     <string name="guided_usage">First, allow usage access so the app can measure cache. Tap Open settings and enable Ultra1TapCache. Come back here for the next step.</string>
     <string name="guided_helper">Next, enable the cleaning helper in Accessibility settings. If Android says restricted settings, open App info, tap the three dots and allow restricted settings if offered. Then return to Accessibility settings. Android requires you to make the final permission choice yourself.</string>
+    <string name="all_apps_settings">All apps settings</string>
 </resources>
