@@ -49,7 +49,7 @@ public class MainActivity extends Activity {
         LinearLayout header=new LinearLayout(this); header.setGravity(Gravity.CENTER_VERTICAL);
         ImageView icon=new ImageView(this); icon.setImageResource(at.manuel.ultra1tapcache.R.drawable.app_icon); icon.setScaleType(ImageView.ScaleType.FIT_CENTER); header.addView(icon,new LinearLayout.LayoutParams(dp(46),dp(54)));
         LinearLayout titles=new LinearLayout(this); titles.setOrientation(LinearLayout.VERTICAL); titles.setPadding(dp(12),0,0,0);
-        titles.addView(text("Ultra1TapCache",22,WHITE,true)); titles.addView(text("EXPERIMENT • TURBO • CLEAN-FIX 1",10,CYAN,true)); header.addView(titles); root.addView(header);
+        titles.addView(text("Ultra1TapCache",22,WHITE,true)); titles.addView(text("EXPERIMENT • CLEAN-FIX 1",10,CYAN,true)); header.addView(titles); root.addView(header);
         subtitle=text("Nur Cache. Keine App-Daten.",13,MUTED,false); subtitle.setPadding(0,dp(12),0,dp(12)); root.addView(subtitle);
         LinearLayout hero=new LinearLayout(this); hero.setOrientation(LinearLayout.VERTICAL); hero.setPadding(dp(18),dp(16),dp(18),dp(16)); hero.setBackground(round(CARD,18));
         hero.addView(text("GEMESSENER CACHE",11,CYAN,true)); total=text("-",34,WHITE,true); hero.addView(total);
@@ -57,6 +57,7 @@ public class MainActivity extends Activity {
         LinearLayout permissions=new LinearLayout(this); usage=button("1  Nutzungszugriff",()->openUsage()); access=button("2  Bedienungshilfe",()->showAccessibilitySetup());
         permissions.addView(usage,new LinearLayout.LayoutParams(0,dp(48),1)); permissions.addView(access,new LinearLayout.LayoutParams(0,dp(48),1)); root.addView(permissions);
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
+        toggles.addView(toggle("Turbo", "turbo", true, null));
         toggles.addView(toggle("Vor jeder Reinigung fragen", "ask", true, null));
         toggles.addView(toggle("System-Apps anzeigen (vorsichtig)", "system", false, ()->startScan())); root.addView(toggles);
         LinearLayout commands=new LinearLayout(this);
@@ -113,7 +114,7 @@ public class MainActivity extends Activity {
         if(selected.isEmpty()) { showFeedback("Keine Apps ausgewählt. Wähle mindestens eine App mit Cache aus oder starte einen neuen Scan."); return; }
         Runnable start=()-> {
             if(CleanerService.connected==null) { showAccessibilitySetup(); return; }
-            if(!CleanerService.start(selected,true)) showFeedback("Reinigung konnte nicht starten. " + CleanerService.status + "\nBitte den Bedienungshilfe-Dienst prüfen und erneut versuchen.");
+            if(!CleanerService.start(selected,prefs.getBoolean("turbo",true))) showFeedback("Reinigung konnte nicht starten. " + CleanerService.status + "\nBitte den Bedienungshilfe-Dienst prüfen und erneut versuchen.");
             updateStatus();
         };
         if(prefs.getBoolean("ask",true)) new AlertDialog.Builder(this).setTitle(selected.size()+" Apps reinigen?").setMessage("Nur Cache leeren. STOP bleibt auf dem Bildschirm. Nicht erkennbare System-Einstellungen werden übersprungen. Bitte währenddessen nicht selbst durch die Einstellungen navigieren.").setPositiveButton("Reinigen",(d,w)->start.run()).setNegativeButton("Abbrechen",null).show(); else start.run();
