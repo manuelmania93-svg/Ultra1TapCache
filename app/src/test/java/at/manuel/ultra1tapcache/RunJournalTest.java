@@ -8,6 +8,15 @@ import org.robolectric.annotation.Config;
 import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class) @Config(sdk=35,qualifiers="de-w411dp-h891dp-420dpi") @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
 public class RunJournalTest {
+ @Test public void setupChoicePrioritizesUsageAndStopsWhenReady() {
+  assertEquals(1,MainActivity.missingSetupStep(false,false));assertEquals(1,MainActivity.missingSetupStep(false,true));assertEquals(2,MainActivity.missingSetupStep(true,false));assertEquals(0,MainActivity.missingSetupStep(true,true));
+ }
+ @Test public void autoSetupDismissalDoesNotLoopOrStartCleaning() throws Exception {
+  Context c=RuntimeEnvironment.getApplication();c.getSharedPreferences("settings",0).edit().putBoolean("disclosure_seen",true).commit();CleanerService.running=false;AppScanner.readState=AppScanner.DENIED;
+  MainActivity a=org.robolectric.Robolectric.buildActivity(MainActivity.class).create().get();java.lang.reflect.Field r=MainActivity.class.getDeclaredField("resumed");r.setAccessible(true);r.setBoolean(a,true);
+  java.lang.reflect.Method m=MainActivity.class.getDeclaredMethod("maybeGuideSetup");m.setAccessible(true);m.invoke(a);
+  android.app.AlertDialog d=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();assertTrue(d.isShowing());save(d.getWindow().getDecorView(),"guided-setup.png",1000,1900,false);d.dismiss();m.invoke(a);assertFalse(d.isShowing());assertFalse(CleanerService.running);a.finish();AppScanner.readState=AppScanner.UNCHECKED;
+ }
  @Test public void speedChangesWaitsNotSafetyOrProgress() {
   assertEquals(250,CleanerService.waitFor("turbo",false));assertEquals(400,CleanerService.waitFor("turbo",true));assertEquals(650,CleanerService.waitFor("normal",false));assertEquals(900,CleanerService.waitFor("normal",true));assertEquals(1300,CleanerService.waitFor("slow",false));assertEquals(1800,CleanerService.waitFor("slow",true));
  }
