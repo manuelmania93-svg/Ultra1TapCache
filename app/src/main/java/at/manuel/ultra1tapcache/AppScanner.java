@@ -45,6 +45,11 @@ final class AppScanner {
         return null;
     }
 
+    static Long cache(Context c, String pkg) {
+        try { return cache(c, c.getPackageManager().getApplicationInfo(pkg, 0)); }
+        catch (Exception e) { note(e); return null; }
+    }
+
     static List<AppEntry> scan(Context c, boolean includeSystem) {
         lastError = null;
         PackageManager pm = c.getPackageManager();
@@ -68,4 +73,4 @@ final class AppScanner {
         }
         return result;
     }
-                                   }
+}
