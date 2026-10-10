@@ -50,7 +50,7 @@ public class MainActivity extends Activity {
         LinearLayout header=new LinearLayout(this); header.setGravity(Gravity.CENTER_VERTICAL);
         ImageView icon=new ImageView(this); icon.setImageResource(at.manuel.ultra1tapcache.R.drawable.app_icon); icon.setScaleType(ImageView.ScaleType.FIT_CENTER); header.addView(icon,new LinearLayout.LayoutParams(dp(46),dp(54)));
         LinearLayout titles=new LinearLayout(this); titles.setOrientation(LinearLayout.VERTICAL); titles.setPadding(dp(12),0,0,0);
-        titles.addView(text("Ultra1TapCache",22,WHITE,true)); titles.addView(text("EXPERIMENT • CLEAN-FIX 1",10,CYAN,true)); header.addView(titles); root.addView(header);
+        titles.addView(text("Ultra1TapCache",22,WHITE,true)); titles.addView(text("EXPERIMENT • APP-SCAN 2",10,CYAN,true)); header.addView(titles); root.addView(header);
         subtitle=text("Nur Cache. Keine App-Daten.",13,MUTED,false); subtitle.setPadding(0,dp(12),0,dp(12)); root.addView(subtitle);
         LinearLayout hero=new LinearLayout(this); hero.setOrientation(LinearLayout.VERTICAL); hero.setPadding(dp(18),dp(16),dp(18),dp(16)); hero.setBackground(round(CARD,18));
         hero.addView(text("GEMESSENER CACHE",11,CYAN,true)); total=text("-",34,WHITE,true); hero.addView(total);
@@ -60,10 +60,10 @@ public class MainActivity extends Activity {
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
         toggles.addView(toggle("Turbo", "turbo", true, null));
         toggles.addView(toggle("Vor jeder Reinigung fragen", "ask", true, null));
-        toggles.addView(toggle("System-Apps anzeigen (vorsichtig)", "system", false, ()->startScan())); root.addView(toggles);
+        toggles.addView(toggle("Apps mit 0 B anzeigen", "show_zero", false, ()->{ renderList(); updateStatus(); })); root.addView(toggles);
         LinearLayout commands=new LinearLayout(this);
         refresh=button("Neu scannen",()->startScan()); Button all=button("Alle / keine",()-> {
-            boolean select=apps.stream().noneMatch(a->a.selected); for(AppEntry a:apps) a.selected=select && a.cacheBytes!=null && a.cacheBytes>0;
+            boolean select=apps.stream().noneMatch(a->a.selected); for(AppEntry a:apps) a.selected=select && !a.system && a.enabled && a.cacheBytes!=null && a.cacheBytes>0;
             renderList(); updateStatus();
         }); commands.addView(refresh,new LinearLayout.LayoutParams(0,dp(46),1)); commands.addView(all,new LinearLayout.LayoutParams(0,dp(46),1)); root.addView(commands);
         ScrollView scroll=new ScrollView(this); list=new LinearLayout(this); list.setOrientation(LinearLayout.VERTICAL); scroll.addView(list); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -102,19 +102,23 @@ public class MainActivity extends Activity {
         if(CleanerService.running) return;
         generation++; int token=generation;
         if(scan!=null) scan.cancel(true); scanning=true; apps=new ArrayList<>(); renderList(); updateStatus();
-        boolean include=prefs.getBoolean("system",false);
+
         scan=worker.submit(()-> {
-            List<AppEntry> found=AppScanner.scan(this,include);
+            List<AppEntry> found=AppScanner.scan(this,false);
             handler.post(()-> { if(isDestroyed() || token!=generation) return; apps=found; scanning=false; renderList(); updateStatus(); });
         });
     }
     private void renderList() {
         list.removeAllViews();
         if(apps.isEmpty()) { TextView t=text(scanning?"Cache-Größen werden gelesen...":"Noch keine Apps. Tippe auf Neu scannen.",14,MUTED,false); t.setPadding(0,dp(24),0,dp(24)); list.addView(t); return; }
+        int visible=0;
         for(AppEntry a:apps) {
-            CheckBox row=new CheckBox(this); row.setText(a.label+"\n"+(a.cacheBytes==null?"Nicht messbar":format(a.cacheBytes))+"  •  "+a.packageName); row.setTextSize(13); row.setTextColor(WHITE); row.setChecked(a.selected); row.setPadding(dp(6),dp(8),dp(6),dp(8));
+            if(a.cacheBytes!=null && a.cacheBytes==0 && !prefs.getBoolean("show_zero",false)) continue;
+            visible++;
+            CheckBox row=new CheckBox(this); row.setText(a.label+(a.system?" [System-App]":"")+(!a.enabled?" [deaktiviert]":"")+"\n"+(a.cacheBytes==null?"Nicht messbar":format(a.cacheBytes))+"  •  "+a.packageName); row.setTextSize(13); row.setTextColor(WHITE); row.setChecked(a.selected); row.setEnabled(a.enabled && a.cacheBytes!=null && a.cacheBytes>0); row.setPadding(dp(6),dp(8),dp(6),dp(8));
             row.setOnCheckedChangeListener((v,on)-> { a.selected=on; updateStatus(); }); list.addView(row,new LinearLayout.LayoutParams(-1,-2));
         }
+        if(visible==0) { TextView t=text("Alle gescannten Apps haben 0 B Cache. Zum Anzeigen den 0-B-Schalter einschalten.",13,MUTED,false); list.addView(t); }
     }
     private void requestClean() {
         if(CleanerService.running) { CleanerService.cancel(); return; }
@@ -131,11 +135,12 @@ public class MainActivity extends Activity {
     }
     private void updateStatus() {
         if(total==null) return;
-        long bytes=0;int unknown=0, selected=0; for(AppEntry a:apps) { if(a.cacheBytes==null) unknown++; else bytes+=a.cacheBytes; if(a.selected) selected++; }
+        long bytes=0;int unknown=0, selected=0, zero=0; for(AppEntry a:apps) { if(a.cacheBytes==null) unknown++; else { bytes+=a.cacheBytes; if(a.cacheBytes==0)zero++; } if(a.selected) selected++; }
         total.setText(scanning?"Scan...":format(bytes));
         boolean result=CleanerService.attempted>0;
         progress.setText(CleanerService.running?CleanerService.status:scanning?"Apps werden nach Cache sortiert...":result?
-            CleanerService.status+"\n"+format(CleanerService.reclaimed)+" nachgemessen • "+CleanerService.verified+" bestätigt\n"+CleanerService.clicked+" Klicks • "+CleanerService.skipped+" unbestätigt/übersprungen":apps.size()+" Apps • "+selected+" ausgewählt • "+unknown+" nicht messbar");
+            CleanerService.status+"\n"+format(CleanerService.reclaimed)+" nachgemessen • "+CleanerService.verified+" bestätigt\n"+CleanerService.clicked+" Klicks • "+CleanerService.skipped+" unbestätigt/übersprungen":apps.size()+" Apps gescannt • "+selected+" ausgewählt\n"+zero+" mit 0 B • "+unknown+" nicht messbar");
+        if(!CleanerService.running && !scanning && unknown>0 && AppScanner.lastError!=null) progress.append("\nMesshinweis: "+AppScanner.lastError);
         usage.setText(AppScanner.hasUsage(this)?"✓ Nutzungszugriff":"1 Nutzungszugriff"); boolean enabled=accessibilityEnabled();
         access.setText(CleanerService.connected!=null?"✓ Bedienungshilfe":enabled?"! Dienst getrennt":"2 Bedienungshilfe");
         if(!CleanerService.running && !scanning && CleanerService.connected==null)
