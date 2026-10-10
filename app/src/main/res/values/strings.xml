@@ -107,7 +107,6 @@
     <string name="confirmed_saved" formatted="false">"confirmed and saved"</string>
     <string name="last_app" formatted="false">"Last app"</string>
     <string name="cleaning_speed" formatted="false">"Cleaning speed"</string>
-    <string name="speed_slow" formatted="false">"Slow - longer waits"</string>
     <string name="speed_normal" formatted="false">"Normal"</string>
     <string name="speed_turbo" formatted="false">"Turbo - shortest waits"</string>
     <string name="guided_setup_title">Set up Ultra1TapCache</string>
@@ -115,4 +114,5 @@
     <string name="guided_helper">Next, enable the cleaning helper in Accessibility settings. If Android says restricted settings, open App info, tap the three dots and allow restricted settings if offered. Then return to Accessibility settings. Android requires you to make the final permission choice yourself.</string>
     <string name="all_apps_settings">All apps settings</string>
     <string name="restricted_possible">Android may restrict this installation. The install source is outside Google Play or unknown, and the cleaning helper is not enabled. This is a hint, not proof that a restriction is active.\n\n1. Tap Open app info below.\n2. Tap the three dots.\n3. If offered, choose Allow restricted settings and follow Android\'s instructions. Only do this if you trust this app: accessibility access can read the screen and interact with other apps.\n4. Come back and enable the cleaning helper in Accessibility settings.\n\nIf the menu item is absent, continue with normal setup. Nothing is enabled automatically.</string>
+    <string name="speed_fast">Fast</string>
 </resources>
