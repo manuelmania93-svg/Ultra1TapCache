@@ -167,7 +167,7 @@ public class MainActivity extends Activity {
         progress.setText(CleanerService.running?CleanerService.status:scanning?getString(R.string.ui_058):result?
             CleanerService.status+getString(R.string.ui_046)+format(CleanerService.reclaimed)+getString(R.string.ui_059)+CleanerService.verified+getString(R.string.ui_060)+CleanerService.clicked+getString(R.string.ui_061)+CleanerService.skipped+getString(R.string.ui_062):apps.size()+getString(R.string.ui_063)+selected+getString(R.string.ui_064)+zero+getString(R.string.ui_065)+unknown+getString(R.string.ui_066));
         if(!CleanerService.running && !scanning && AppScanner.readState==AppScanner.DENIED)
-            progress.append(getString(R.string.ui_067)+AppScanner.modeName(AppScanner.usageMode(this))+getString(R.string.ui_032)+android.os.Process.myUid()+getString(R.string.ui_068));
+            progress.append(getString(R.string.ui_067)+getString(R.string.ui_068));
         else if(!CleanerService.running && !scanning && unknown>0 && AppScanner.lastError!=null) progress.append(getString(R.string.ui_069)+AppScanner.lastError);
         usage.setText(scanning?getString(R.string.ui_070):AppScanner.readState==AppScanner.VERIFIED?getString(R.string.ui_071):AppScanner.readState==AppScanner.DENIED?getString(R.string.ui_072):getString(R.string.ui_073)); boolean enabled=accessibilityEnabled();
         access.setText(CleanerService.connected!=null?getString(R.string.ui_074):enabled?getString(R.string.ui_075):getString(R.string.ui_076));
