@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
     private Future<?> scan;
     private LinearLayout root,list;
     private TextView total,subtitle,progress;
-    private Button clean,refresh,usage,access;
+    private Button clean,refresh,usage,access,resume;
     private List<AppEntry> apps=new ArrayList<>();
     private SharedPreferences prefs;
     private boolean scanning, resumed, recheckUsage;
@@ -70,6 +70,7 @@ public class MainActivity extends Activity {
         }); commands.addView(refresh,new LinearLayout.LayoutParams(0,dp(46),1)); commands.addView(all,new LinearLayout.LayoutParams(0,dp(46),1)); root.addView(commands);
         Button allSystem=button(getString(R.string.select_all_system),()->confirmSelectAll());
         root.addView(allSystem,new LinearLayout.LayoutParams(-1,dp(44)));
+        resume=button(getString(R.string.resume_cleaning),()->requestResume());root.addView(resume,new LinearLayout.LayoutParams(-1,dp(44)));
         ScrollView scroll=new ScrollView(this); list=new LinearLayout(this); list.setOrientation(LinearLayout.VERTICAL); scroll.addView(list); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         clean=button(getString(R.string.ui_012),()->requestClean()); clean.setTextColor(BG); clean.setBackground(round(CYAN,14)); root.addView(clean,new LinearLayout.LayoutParams(-1,dp(58)));
         TextView footer=text(getString(R.string.ui_013),10,MUTED,false); footer.setPadding(0,dp(8),0,0); root.addView(footer);
@@ -167,6 +168,25 @@ public class MainActivity extends Activity {
             .setPositiveButton(getString(R.string.select_confirm),(d,w)-> { selectAllMeasured(apps); renderList(); updateStatus(); })
             .setNegativeButton(getString(R.string.ui_025),null).show();
     }
+    private void requestResume(){
+        if(CleanerService.running||scanning)return;
+        if(CleanerService.connected==null){showAccessibilitySetup();return;}
+        int remaining=RunJournal.remaining(this).size();if(remaining==0)return;
+        new AlertDialog.Builder(this).setTitle(getString(R.string.resume_cleaning))
+            .setMessage(getString(R.string.resume_explain)+"\n"+remaining+" "+getString(R.string.remaining_apps))
+            .setPositiveButton(getString(R.string.resume_cleaning),(d,w)->{if(!CleanerService.resume(prefs.getBoolean("turbo",true)))showFeedback(getString(R.string.resume_failed));updateStatus();})
+            .setNegativeButton(getString(R.string.ui_025),null).show();
+    }
+    private String journalReason(String reason){
+        if("running".equals(reason)&&!CleanerService.running)return getString(R.string.process_stopped);
+        if("finished".equals(reason))return getString(R.string.ui_086);
+        if("user_stop".equals(reason))return getString(R.string.ui_083);
+        if("measurement_timeout".equals(reason)||"baseline_timeout".equals(reason))return getString(R.string.measure_timeout);
+        if("service_destroyed".equals(reason))return getString(R.string.ui_088);
+        if("service_interrupted".equals(reason))return getString(R.string.ui_087);
+        if("overlay_missing".equals(reason))return getString(R.string.ui_085);
+        return getString(R.string.engine_error)+" ("+reason+")";
+    }
     private void requestClean() {
         if(CleanerService.running) { CleanerService.cancel(); return; }
         if(scanning) { showFeedback(getString(R.string.ui_049)); return; }
@@ -184,6 +204,7 @@ public class MainActivity extends Activity {
         if(total==null) return;
         long bytes=0;int unknown=0, selected=0, zero=0; for(AppEntry a:apps) { if(a.cacheBytes==null) unknown++; else { bytes+=a.cacheBytes; if(a.cacheBytes==0)zero++; } if(a.selected) selected++; }
         total.setText(scanning?getString(R.string.ui_056):AppScanner.readState==AppScanner.DENIED?getString(R.string.ui_057):format(bytes));
+        org.json.JSONObject journal=RunJournal.read(this);
         boolean result=CleanerService.attempted>0;
         progress.setText(CleanerService.running?CleanerService.status:scanning?getString(R.string.ui_058):result?
             CleanerService.status+getString(R.string.ui_046)+format(CleanerService.reclaimed)+getString(R.string.ui_059)+CleanerService.verified+getString(R.string.ui_060)+CleanerService.clicked+getString(R.string.ui_061)+CleanerService.skipped+getString(R.string.ui_062):apps.size()+getString(R.string.ui_063)+selected+getString(R.string.ui_064)+zero+getString(R.string.ui_065)+unknown+getString(R.string.ui_066));
@@ -194,9 +215,15 @@ public class MainActivity extends Activity {
         access.setText(CleanerService.connected!=null?getString(R.string.ui_074):enabled?getString(R.string.ui_075):getString(R.string.ui_076));
         if(!CleanerService.running && !scanning && CleanerService.connected==null)
             progress.append(enabled?getString(R.string.ui_077):getString(R.string.ui_078));
+        if(!CleanerService.running && journal.has("rows")) {
+            int remaining=RunJournal.remaining(this).size();
+            progress.append("\n"+journalReason(journal.optString("reason"))+"\n"+RunJournal.count(this,"confirmed")+" "+getString(R.string.confirmed_saved)+" • "+remaining+" "+getString(R.string.remaining_apps));
+            String current=journal.optString("current");if(!current.isEmpty() && !"finished".equals(journal.optString("reason")))progress.append("\n"+getString(R.string.last_app)+": "+current);
+        }
+        resume.setVisibility(!CleanerService.running && !RunJournal.remaining(this).isEmpty()?View.VISIBLE:View.GONE);resume.setEnabled(!scanning);
         clean.setText(CleanerService.running?getString(R.string.ui_079):getString(R.string.ui_080)+selected+getString(R.string.ui_081)); clean.setEnabled(true); refresh.setEnabled(!scanning && !CleanerService.running);
     }
-    @Override protected void onResume() { super.onResume(); resumed=true; handler.post(update); if(recheckUsage && !CleanerService.running) { recheckUsage=false; startScan(); } else if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
+    @Override protected void onResume() { super.onResume(); resumed=true; renderList(); handler.post(update); if(recheckUsage && !CleanerService.running) { recheckUsage=false; startScan(); } else if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
     @Override protected void onPause() { resumed=false; handler.removeCallbacks(update); super.onPause(); }
     @Override protected void onDestroy() { generation++; if(scan!=null) scan.cancel(true); worker.shutdownNow(); handler.removeCallbacksAndMessages(null); super.onDestroy(); }
     private TextView text(String s,int sp,int color,boolean bold) { TextView t=new TextView(this); t.setText(s); t.setTextSize(sp); t.setTextColor(color); if(bold)t.setTypeface(null,Typeface.BOLD); return t; }
