@@ -34,11 +34,17 @@ public class CleanerService extends AccessibilityService {
     private Runnable watchdog;
     private boolean turbo, cacheClicked, storageOpened, identitySeen, measuring;
     private long deadline, nextAllowed;
+    private int uiWait=250,afterWait=400;
     private Button stopButton;
     private WindowManager wm;
     private final Runnable tick = () -> {try {step();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}};
 
     @Override protected void onServiceConnected() { connected = this; }
+    static int waitFor(String speed,boolean after){
+        if("slow".equals(speed))return after?1800:1300;
+        if("normal".equals(speed))return after?900:650;
+        return after?400:250;
+    }
     static boolean start(List<AppEntry> entries, boolean fast) {
         if (connected == null || running || entries.isEmpty()) return false;
         try {connected.begin(entries, fast, false);return running;}catch(RuntimeException e){connected.stop("checkpoint_error",connected.getString(R.string.engine_error)+": "+e.getClass().getSimpleName());return false;}
@@ -51,6 +57,8 @@ public class CleanerService extends AccessibilityService {
     static void cancel() { if (connected != null) connected.stop("user_stop",connected.getString(R.string.ui_083)); }
     private void begin(List<AppEntry> entries, boolean fast, boolean resume) {
         generation++; queue = new ArrayList<>(entries); turbo = fast;
+        String speed=getSharedPreferences("settings",MODE_PRIVATE).getString("speed",fast?"turbo":"normal");
+        uiWait=waitFor(speed,false);afterWait=waitFor(speed,true);
         if(!resume) RunJournal.begin(this,entries);
         attempted=clicked=skipped=0; verified=RunJournal.count(this,"confirmed"); reclaimed=RunJournal.read(this).optLong("bytes"); index=-1;running=true;
         RunJournal.reason(this,"running");
@@ -87,8 +95,8 @@ public class CleanerService extends AccessibilityService {
                 if(baseline==null){recordAndAdvance("unmeasurable",null,0);return;}
                 app.cacheBytes=baseline;RunJournal.baseline(this,app.packageName,baseline);
                 if(baseline==0){recordAndAdvance("already_empty",0L,0);return;}
-                deadline=SystemClock.uptimeMillis()+12000;nextAllowed=SystemClock.uptimeMillis()+(turbo?250:650);
-                try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));schedule(turbo?250:650); }
+                deadline=SystemClock.uptimeMillis()+12000;nextAllowed=SystemClock.uptimeMillis()+uiWait;
+                try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));scheduleuiWait; }
                 catch(RuntimeException e){recordAndAdvance("settings_failed",null,0);}
             });
         });
@@ -129,8 +137,8 @@ public class CleanerService extends AccessibilityService {
             if (!cacheClicked && cache != null) {
                 if (!cache.isEnabled()) { recordAndAdvance("cache_button_disabled",null,0); return; }
                 if (safeClick(cache)) {
-                    cacheClicked = true; clicked++; nextAllowed = now + (turbo ? 400 : 900);
-                    schedule(turbo ? 400 : 900); return;
+                    cacheClicked = true; clicked++; nextAllowed = now + (afterWait);
+                    schedule(afterWait); return;
                 }
             }
             if (cacheClicked) {
@@ -140,8 +148,8 @@ public class CleanerService extends AccessibilityService {
             if (!storageOpened) {
                 AccessibilityNodeInfo storage = find(root,false);
                 if (storage != null && safeClick(storage)) {
-                    storageOpened = true; nextAllowed = now + (turbo ? 250 : 650);
-                    schedule(turbo ? 250 : 650); return;
+                    storageOpened = true; nextAllowed = now + (uiWait);
+                    schedule(uiWait); return;
                 }
             }
             schedule(200);
