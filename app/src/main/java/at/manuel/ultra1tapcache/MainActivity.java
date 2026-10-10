@@ -33,7 +33,7 @@ public class MainActivity extends Activity {
     private Button clean,refresh,usage,access;
     private List<AppEntry> apps=new ArrayList<>();
     private SharedPreferences prefs;
-    private boolean scanning, resumed;
+    private boolean scanning, resumed, recheckUsage;
     private int generation;
     private final Runnable update=new Runnable() { public void run() { if(resumed) { updateStatus(); handler.postDelayed(this,500); } } };
     @Override public void onCreate(Bundle state) {
@@ -50,7 +50,7 @@ public class MainActivity extends Activity {
         LinearLayout header=new LinearLayout(this); header.setGravity(Gravity.CENTER_VERTICAL);
         ImageView icon=new ImageView(this); icon.setImageResource(at.manuel.ultra1tapcache.R.drawable.app_icon); icon.setScaleType(ImageView.ScaleType.FIT_CENTER); header.addView(icon,new LinearLayout.LayoutParams(dp(46),dp(54)));
         LinearLayout titles=new LinearLayout(this); titles.setOrientation(LinearLayout.VERTICAL); titles.setPadding(dp(12),0,0,0);
-        titles.addView(text("Ultra1TapCache",22,WHITE,true)); titles.addView(text("EXPERIMENT • APP-SCAN 2",10,CYAN,true)); header.addView(titles); root.addView(header);
+        titles.addView(text("Ultra1TapCache",22,WHITE,true)); titles.addView(text("EXPERIMENT • USAGE-CHECK 3",10,CYAN,true)); header.addView(titles); root.addView(header);
         subtitle=text("Nur Cache. Keine App-Daten.",13,MUTED,false); subtitle.setPadding(0,dp(12),0,dp(12)); root.addView(subtitle);
         LinearLayout hero=new LinearLayout(this); hero.setOrientation(LinearLayout.VERTICAL); hero.setPadding(dp(18),dp(16),dp(18),dp(16)); hero.setBackground(round(CARD,18));
         hero.addView(text("GEMESSENER CACHE",11,CYAN,true)); total=text("-",34,WHITE,true); hero.addView(total);
@@ -97,7 +97,33 @@ public class MainActivity extends Activity {
     private void showFeedback(String message) {
         new AlertDialog.Builder(this).setTitle("Reinigung").setMessage(message).setPositiveButton("OK",null).show();
     }
-    private void openUsage() { try { startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS,Uri.parse("package:"+getPackageName()))); } catch(RuntimeException e) { startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)); } }
+    private void openUsage() {
+        String state=AppScanner.readState==AppScanner.VERIFIED?"Fremde App erfolgreich gelesen":
+            AppScanner.readState==AppScanner.DENIED?(AppScanner.hasUsage(this)?"Anzeige erlaubt, echter Zugriff verweigert":"Echter Zugriff verweigert"):
+            "Echter Zugriff noch nicht bestätigt";
+        String details=state+"\nAppOps: "+AppScanner.modeName(AppScanner.usageMode(this))+" • UID: "+android.os.Process.myUid()
+            +"\nPaket: "+getPackageName()+"\nTest-App: "+String.valueOf(AppScanner.probePackage)
+            +(AppScanner.probeError==null?"":"\n\n"+AppScanner.probeError);
+        new AlertDialog.Builder(this).setTitle("Nutzungszugriff prüfen")
+            .setMessage(details+"\n\nÖffne den Nutzungszugriff für Ultra1TapCache. Falls bereits erlaubt: einmal aus- und einschalten. Zurück in der App wird automatisch neu gemessen.\n\nFalls der Schalter gesperrt ist: App-Info > Menü > Eingeschränkte Einstellungen zulassen (nur falls angeboten). Bei weiterem Fehler: Gerät neu starten und diesen Prüftext zusammen mit der erlaubten Einstellung zeigen. Neuinstallation ist dafür nicht nötig.")
+            .setPositiveButton("App-Eintrag",(d,w)->launchUsage(true))
+            .setNeutralButton("Gesamte Liste",(d,w)->launchUsage(false))
+            .setNegativeButton("App-Info",(d,w)-> {
+                recheckUsage=true;
+                try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))); }
+                catch(RuntimeException e) { recheckUsage=false; showFeedback("Bitte App-Info für Ultra1TapCache manuell öffnen."); }
+            }).show();
+    }
+    private void launchUsage(boolean specific) {
+        recheckUsage=true;
+        Intent intent=new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS);
+        if(specific) intent.setData(Uri.parse("package:"+getPackageName()));
+        try { startActivity(intent); }
+        catch(RuntimeException e) {
+            try { startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)); }
+            catch(RuntimeException fallback) { recheckUsage=false; showFeedback("Bitte Einstellungen > Spezieller App-Zugriff > Nutzungszugriff manuell öffnen."); }
+        }
+    }
     private void startScan() {
         if(CleanerService.running) return;
         generation++; int token=generation;
@@ -136,18 +162,20 @@ public class MainActivity extends Activity {
     private void updateStatus() {
         if(total==null) return;
         long bytes=0;int unknown=0, selected=0, zero=0; for(AppEntry a:apps) { if(a.cacheBytes==null) unknown++; else { bytes+=a.cacheBytes; if(a.cacheBytes==0)zero++; } if(a.selected) selected++; }
-        total.setText(scanning?"Scan...":format(bytes));
+        total.setText(scanning?"Scan...":AppScanner.readState==AppScanner.DENIED?"Zugriff fehlt":format(bytes));
         boolean result=CleanerService.attempted>0;
         progress.setText(CleanerService.running?CleanerService.status:scanning?"Apps werden nach Cache sortiert...":result?
             CleanerService.status+"\n"+format(CleanerService.reclaimed)+" nachgemessen • "+CleanerService.verified+" bestätigt\n"+CleanerService.clicked+" Klicks • "+CleanerService.skipped+" unbestätigt/übersprungen":apps.size()+" Apps gescannt • "+selected+" ausgewählt\n"+zero+" mit 0 B • "+unknown+" nicht messbar");
-        if(!CleanerService.running && !scanning && unknown>0 && AppScanner.lastError!=null) progress.append("\nMesshinweis: "+AppScanner.lastError);
-        usage.setText(AppScanner.hasUsage(this)?"✓ Nutzungszugriff":"1 Nutzungszugriff"); boolean enabled=accessibilityEnabled();
+        if(!CleanerService.running && !scanning && AppScanner.readState==AppScanner.DENIED)
+            progress.append("\nKeine vollständige Summe. Nur eigener Cache messbar.\nAppOps: "+AppScanner.modeName(AppScanner.usageMode(this))+" • UID: "+android.os.Process.myUid()+"\nPrüftext: Nutzungszugriff antippen.");
+        else if(!CleanerService.running && !scanning && unknown>0 && AppScanner.lastError!=null) progress.append("\nMesshinweis: "+AppScanner.lastError);
+        usage.setText(scanning?"Zugriff prüfen...":AppScanner.readState==AppScanner.VERIFIED?"✓ Zugriff gemessen":AppScanner.readState==AppScanner.DENIED?"! Zugriff verweigert":"1 Nutzungszugriff"); boolean enabled=accessibilityEnabled();
         access.setText(CleanerService.connected!=null?"✓ Bedienungshilfe":enabled?"! Dienst getrennt":"2 Bedienungshilfe");
         if(!CleanerService.running && !scanning && CleanerService.connected==null)
             progress.append(enabled?"\nBedienungshilfe: aktiviert, aber nicht verbunden.":"\nBedienungshilfe: nicht aktiviert.");
         clean.setText(CleanerService.running?"STOP • ABBRECHEN":"1 TAP • "+selected+" APPS REINIGEN"); clean.setEnabled(true); refresh.setEnabled(!scanning && !CleanerService.running);
     }
-    @Override protected void onResume() { super.onResume(); resumed=true; handler.post(update); if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
+    @Override protected void onResume() { super.onResume(); resumed=true; handler.post(update); if(recheckUsage && !CleanerService.running) { recheckUsage=false; startScan(); } else if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
     @Override protected void onPause() { resumed=false; handler.removeCallbacks(update); super.onPause(); }
     @Override protected void onDestroy() { generation++; if(scan!=null) scan.cancel(true); worker.shutdownNow(); handler.removeCallbacksAndMessages(null); super.onDestroy(); }
     private TextView text(String s,int sp,int color,boolean bold) { TextView t=new TextView(this); t.setText(s); t.setTextSize(sp); t.setTextColor(color); if(bold)t.setTypeface(null,Typeface.BOLD); return t; }
