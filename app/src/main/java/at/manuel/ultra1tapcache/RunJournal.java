@@ -32,6 +32,7 @@ final class RunJournal {
             run.put("bytes",run.optLong("bytes")+Math.max(0,reclaimed));run.put("current",pkg);write(c,run);
         } catch(org.json.JSONException e) { throw new IllegalStateException(e); }
     }
+    static void measurement(Context c,String pkg,Long after,int reads,long elapsed){JSONObject run=read(c);JSONArray rows=run.optJSONArray("rows");if(rows==null)return;try{for(int i=0;i<rows.length();i++){JSONObject row=rows.getJSONObject(i);if(pkg.equals(row.optString("pkg"))){row.put("after",after==null?JSONObject.NULL:after);row.put("measurement_reads",reads);row.put("click_to_read_ms",elapsed);break;}}write(c,run);}catch(org.json.JSONException e){throw new IllegalStateException(e);}}
     static void reason(Context c,String reason) {JSONObject run=read(c);try {run.put("reason",reason);write(c,run);}catch(org.json.JSONException e){throw new IllegalStateException(e);} }
     static boolean done(String state) {return "confirmed".equals(state)||"already_empty".equals(state);}
     static List<AppEntry> remaining(Context c) {
