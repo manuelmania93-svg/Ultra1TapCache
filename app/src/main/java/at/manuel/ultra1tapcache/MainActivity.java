@@ -66,8 +66,9 @@ public class MainActivity extends Activity {
         LinearLayout shortcuts=new LinearLayout(this);
         shortcuts.addView(button(getString(R.string.all_apps_settings),()->openAllApps()),new LinearLayout.LayoutParams(0,dp(48),1));
         shortcuts.addView(button(getString(R.string.open_app_info),()->openAppInfo()),new LinearLayout.LayoutParams(0,dp(48),1));root.addView(shortcuts);
-        root.addView(button(getString(R.string.history_title),()->new AlertDialog.Builder(this).setTitle(getString(R.string.history_title)).setMessage(getString(R.string.history_hint)).setPositiveButton(android.R.string.ok,null).show()),new LinearLayout.LayoutParams(-1,dp(44)));
-        root.addView(button(getString(R.string.diag_title),()->showRunDiagnostics()),new LinearLayout.LayoutParams(-1,dp(44)));
+        LinearLayout historyActions=new LinearLayout(this);
+        historyActions.addView(button(getString(R.string.history_title),()->new AlertDialog.Builder(this).setTitle(getString(R.string.history_title)).setMessage(getString(R.string.history_hint)).setPositiveButton(android.R.string.ok,null).show()),new LinearLayout.LayoutParams(0,dp(48),1));
+        historyActions.addView(button(getString(R.string.diag_title),()->showRunDiagnostics()),new LinearLayout.LayoutParams(0,dp(48),1));root.addView(historyActions);
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
         toggles.addView(text(getString(R.string.cleaning_speed),13,WHITE,true));
         Spinner speed=new Spinner(this);String[] speedKeys={"normal","fast","turbo"};
