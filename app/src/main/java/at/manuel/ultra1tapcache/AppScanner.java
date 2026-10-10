@@ -3,6 +3,7 @@ package at.manuel.ultra1tapcache;
 import android.app.AppOpsManager;
 import android.app.usage.StorageStatsManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -32,7 +33,7 @@ final class AppScanner {
         if (lastError == null) lastError = e.getClass().getSimpleName() + ": " + String.valueOf(e.getMessage());
     }
 
-    /** Official StorageStatsManager only; tries package query, then default volume, then UID query. Null = genuinely not measurable. */
+    /** Official StorageStatsManager only; tries package query, then default volume, then single-package UID query. Null = genuinely not measurable. */
     static Long cache(Context c, ApplicationInfo info) {
         StorageStatsManager ssm = c.getSystemService(StorageStatsManager.class);
         if (ssm == null) { if (lastError == null) lastError = "StorageStatsManager fehlt"; return null; }
@@ -41,7 +42,11 @@ final class AppScanner {
         if (!StorageManager.UUID_DEFAULT.equals(own)) {
             try { return ssm.queryStatsForPackage(StorageManager.UUID_DEFAULT, info.packageName, Process.myUserHandle()).getCacheBytes(); } catch (Exception e) { note(e); }
         }
-        try { return ssm.queryStatsForUid(own, info.uid).getCacheBytes(); } catch (Exception e) { note(e); }
+        // A shared UID total is not a per-app value and would double-count other packages.
+        String[] packages = c.getPackageManager().getPackagesForUid(info.uid);
+        if (packages != null && packages.length == 1 && info.packageName.equals(packages[0])) {
+            try { return ssm.queryStatsForUid(own, info.uid).getCacheBytes(); } catch (Exception e) { note(e); }
+        }
         return null;
     }
 
@@ -50,32 +55,37 @@ final class AppScanner {
         catch (Exception e) { note(e); return null; }
     }
 
-    static List<AppEntry> scan(Context c, boolean includeSystem) {
+    static boolean eligible(boolean system, boolean launcher) { return !system || launcher; }
+
+    private static boolean hasLauncher(PackageManager pm, String pkg) {
+        // Launch intents omit disabled components. Query with MATCH_DISABLED_COMPONENTS instead.
+        for (String category : new String[]{Intent.CATEGORY_LAUNCHER, Intent.CATEGORY_LEANBACK_LAUNCHER}) {
+            Intent intent = new Intent(Intent.ACTION_MAIN).addCategory(category).setPackage(pkg);
+            if (!pm.queryIntentActivities(intent, PackageManager.MATCH_DISABLED_COMPONENTS).isEmpty()) return true;
+        }
+        return false;
+    }
+
+    // Display filters must never affect scan coverage. Hidden OS services are out of scope.
+    static List<AppEntry> scan(Context c, boolean unusedDisplayFilter) {
         lastError = null;
         PackageManager pm = c.getPackageManager();
         List<AppEntry> result = new ArrayList<>();
-        for (ApplicationInfo info : pm.getInstalledApplications(0)) {
+        for (ApplicationInfo info : pm.getInstalledApplications(PackageManager.MATCH_DISABLED_COMPONENTS)) {
             if (Thread.currentThread().isInterrupted()) break;
-            if (info.packageName.equals(c.getPackageName()) || info.packageName.equals("com.android.settings") || !info.enabled) continue;
-            boolean system = (info.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-            // Preinstalled-but-user-facing apps (Chrome, Gmail, Google...) are system apps on many ROMs; 1Tap Cleaner counts them. Hide only pure background system apps.
-            boolean userFacing = (info.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0 || pm.getLaunchIntentForPackage(info.packageName) != null;
-            if (!includeSystem && system && !userFacing) continue;
+            boolean system = (info.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0;
+            if (!eligible(system, hasLauncher(pm, info.packageName))) continue;
             Long bytes = cache(c, info);
-            if (bytes != null && bytes == 0L) continue; // 0 B cache: nothing to clean, hide
-            result.add(new AppEntry(info.packageName, info.loadLabel(pm).toString(), bytes));
+            String label;
+            try { label = info.loadLabel(pm).toString(); }
+            catch (RuntimeException e) { label = info.packageName; }
+            result.add(new AppEntry(info.packageName, label, bytes, system, info.enabled));
         }
         result.sort((a,b) -> {
             long ac = a.cacheBytes == null ? -1 : a.cacheBytes, bc = b.cacheBytes == null ? -1 : b.cacheBytes;
             int order = Long.compare(bc, ac);
             return order != 0 ? order : a.label.compareToIgnoreCase(b.label);
         });
-        boolean anyMeasured = false;
-        for (AppEntry e : result) if (e.cacheBytes != null) { anyMeasured = true; break; }
-        if (!anyMeasured && lastError != null && !result.isEmpty()) {
-            // Never fail silently: show why Android refused the measurement.
-            result.add(0, new AppEntry("diagnose.messfehler", "Messfehler: " + lastError, null));
-        }
         return result;
     }
 }
