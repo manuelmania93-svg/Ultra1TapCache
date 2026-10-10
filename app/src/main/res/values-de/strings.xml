@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" formatted="false">"Ultra1TapCache"</string>
-    <string name="ui_001" formatted="false">"EXPERIMENT • RESUME 6"</string>
+    <string name="ui_001" formatted="false">"EXPERIMENT • DIAG 7"</string>
     <string name="ui_002" formatted="false">"Nur Cache. Keine App-Daten."</string>
     <string name="ui_003" formatted="false">"GEMESSENER CACHE"</string>
     <string name="ui_004" formatted="false">"Nutzungszugriff aktivieren, dann scannen."</string>
@@ -116,4 +116,25 @@
     <string name="restricted_possible">Android könnte diese Installation einschränken. Die Installationsquelle ist außerhalb von Google Play oder unbekannt, und die Reinigungshilfe ist nicht aktiviert. Das ist ein Hinweis, kein Nachweis einer aktiven Einschränkung.\n\n1. Unten App-Info öffnen antippen.\n2. Die drei Punkte antippen.\n3. Falls angeboten: Eingeschränkte Einstellungen zulassen und Androids Anweisungen folgen. Nur wenn du dieser App vertraust: Die Bedienungshilfe kann Bildschirminhalte lesen und mit anderen Apps interagieren.\n4. Zurückkommen und die Reinigungshilfe in den Bedienungshilfen aktivieren.\n\nFehlt der Menüpunkt, mit dem normalen Setup weitermachen. Nichts wird automatisch aktiviert.</string>
     <string name="speed_fast">Schnell</string>
     <string name="done_saved">" (im gespeicherten Lauf erledigt)"</string>
+    <string name="diag_title">Laufdiagnose</string>
+    <string name="diag_no_run">Noch kein gespeicherter Lauf.</string>
+    <string name="diag_run_reason">Grund für Laufende</string>
+    <string name="diag_confirmed">Abnahme gemessen</string>
+    <string name="diag_empty">Bereits leer</string>
+    <string name="diag_unchanged">Keine gemessene Abnahme</string>
+    <string name="diag_null">Messung nicht verfügbar</string>
+    <string name="diag_disabled">Cache-Button deaktiviert</string>
+    <string name="diag_not_found">Cache-Button vor Zeitlimit nicht gefunden</string>
+    <string name="diag_timeout">Einstellungen oder App-Identität: Zeitlimit</string>
+    <string name="diag_settings_failed">Einstellungen nicht geöffnet</string>
+    <string name="diag_clicked">Klick angenommen, noch nicht bestätigt</string>
+    <string name="diag_started">Gestartet, kein Endergebnis</string>
+    <string name="diag_pending">Ausstehend</string>
+    <string name="diag_baseline">Vorher</string>
+    <string name="diag_after">Nachher</string>
+    <string name="diag_reads">Messungen</string>
+    <string name="diag_elapsed">Klick bis letzte Messung</string>
+    <string name="diag_share">Diagnose teilen</string>
+    <string name="diag_privacy">Enthält installierte App-Namen, Pakete und Cache-Größen. Vor dem Teilen prüfen. Eine Byte-Abnahme belegt eine Abnahme, nicht dass der gesamte Cache leer ist.</string>
+    <string name="diag_click_rejected">Cache-Klick abgelehnt oder unsicheres Ziel</string>
 </resources>
