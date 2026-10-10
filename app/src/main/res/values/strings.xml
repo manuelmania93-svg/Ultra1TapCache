@@ -115,4 +115,5 @@
     <string name="all_apps_settings">All apps settings</string>
     <string name="restricted_possible">Android may restrict this installation. The install source is outside Google Play or unknown, and the cleaning helper is not enabled. This is a hint, not proof that a restriction is active.\n\n1. Tap Open app info below.\n2. Tap the three dots.\n3. If offered, choose Allow restricted settings and follow Android\'s instructions. Only do this if you trust this app: accessibility access can read the screen and interact with other apps.\n4. Come back and enable the cleaning helper in Accessibility settings.\n\nIf the menu item is absent, continue with normal setup. Nothing is enabled automatically.</string>
     <string name="speed_fast">Fast</string>
+    <string name="done_saved">" (done in saved run)"</string>
 </resources>
