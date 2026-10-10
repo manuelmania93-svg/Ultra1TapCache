@@ -66,7 +66,7 @@
     <string name="ui_064" formatted="false">" selected\n"</string>
     <string name="ui_065" formatted="false">" with no cache • "</string>
     <string name="ui_066" formatted="false">" unavailable"</string>
-    <string name="ui_067" formatted="false">"\nCache total unavailable. Only this app can be measured.\nAppOps: "</string>
+    <string name="ui_067" formatted="false">"\nCache total unavailable. Only this app can be measured."</string>
     <string name="ui_068" formatted="false">"\nTap Allow cache access for help and details."</string>
     <string name="ui_069" formatted="false">"\nMeasurement note: "</string>
     <string name="ui_070" formatted="false">"Checking access..."</string>
