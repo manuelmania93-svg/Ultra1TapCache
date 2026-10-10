@@ -62,6 +62,9 @@ public class MainActivity extends Activity {
         permissions.addView(usage,new LinearLayout.LayoutParams(0,dp(48),1)); permissions.addView(access,new LinearLayout.LayoutParams(0,dp(48),1)); root.addView(permissions);
         Button setup=button(getString(R.string.setup_help),()->showAndroidSetupHelp());
         root.addView(setup,new LinearLayout.LayoutParams(-1,dp(44)));
+        LinearLayout shortcuts=new LinearLayout(this);
+        shortcuts.addView(button(getString(R.string.all_apps_settings),()->openAllApps()),new LinearLayout.LayoutParams(0,dp(48),1));
+        shortcuts.addView(button(getString(R.string.open_app_info),()->openAppInfo()),new LinearLayout.LayoutParams(0,dp(48),1));root.addView(shortcuts);
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
         toggles.addView(text(getString(R.string.cleaning_speed),13,WHITE,true));
         Spinner speed=new Spinner(this);String[] speedKeys={"slow","normal","turbo"};
@@ -123,6 +126,10 @@ public class MainActivity extends Activity {
                 try { startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
                 catch(RuntimeException e) { new AlertDialog.Builder(this).setTitle(getString(R.string.ui_022)).setMessage(getString(R.string.ui_023)).setPositiveButton(getString(R.string.ui_024),null).show(); }
             }).setNeutralButton(getString(R.string.open_app_info),(d,w)->showAndroidSetupHelp()).setNegativeButton(getString(R.string.ui_025),null).show();
+    }
+    private void openAllApps(){
+        try{startActivity(new Intent(Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS));}
+        catch(RuntimeException e){try{startActivity(new Intent(Settings.ACTION_APPLICATION_SETTINGS));}catch(RuntimeException fallback){showFeedback(getString(R.string.ui_040));}}
     }
     private void openAppInfo() {
         recheckUsage=true;
