@@ -35,6 +35,7 @@ public class CleanerService extends AccessibilityService {
     private boolean turbo, cacheClicked, storageOpened, identitySeen, measuring;
     private long deadline, nextAllowed;
     private int uiWait=250,afterWait=400;
+    private long clickedAt;
     private Button stopButton;
     private WindowManager wm;
     private final Runnable tick = () -> {try {step();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}};
@@ -138,7 +139,7 @@ public class CleanerService extends AccessibilityService {
             if (!cacheClicked && cache != null) {
                 if (!cache.isEnabled()) { recordAndAdvance("cache_button_disabled",null,0); return; }
                 if (safeClick(cache)) {
-                    cacheClicked = true; clicked++; nextAllowed = now + (afterWait);
+                    cacheClicked = true; clicked++;clickedAt=SystemClock.uptimeMillis(); nextAllowed = now + (afterWait);
                     schedule(afterWait); return;
                 }
             }
@@ -198,16 +199,25 @@ public class CleanerService extends AccessibilityService {
         }
         return false;
     }
+    static boolean measuredDecrease(Long baseline,Long after){return baseline!=null&&after!=null&&after<baseline;}
+    static long retryDelay(int reads){return reads==1?300:reads==2?450:-1;}
     private void measureAndContinue() {
         if(!running||measuring)return;measuring=true;
-        int token=generation,current=appToken;AppEntry app=queue.get(index);
-        RunJournal.state(this,app.packageName,"clicked",null,0);armWatchdog("measurement_timeout");
+        RunJournal.state(this,queue.get(index).packageName,"clicked",null,0);armWatchdog("measurement_timeout");
+        measureAttempt(generation,appToken,1);
+    }
+    private void measureAttempt(int token,int current,int reads){
+        if(!running||token!=generation||current!=appToken)return;
+        AppEntry app=queue.get(index);
         io.execute(()-> {
             Long after=AppScanner.cache(this,app.packageName);
             postSafe(()-> {
                 if(!running||token!=generation||current!=appToken)return;
-                if(app.cacheBytes!=null&&after!=null&&after<app.cacheBytes)recordAndAdvance("confirmed",after,app.cacheBytes-after);
-                else recordAndAdvance("unconfirmed",after,0);
+                RunJournal.measurement(this,app.packageName,after,reads,SystemClock.uptimeMillis()-clickedAt);
+                if(measuredDecrease(app.cacheBytes,after)){recordAndAdvance("confirmed",after,app.cacheBytes-after);return;}
+                long delay=retryDelay(reads);
+                if(after!=null&&delay>=0){handler.postDelayed(()->measureAttempt(token,current,reads+1),delay);return;}
+                recordAndAdvance(after==null?"unmeasurable":"unconfirmed",after,0);
             });
         });
     }
