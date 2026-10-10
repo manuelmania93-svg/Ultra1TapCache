@@ -200,7 +200,7 @@ public class MainActivity extends Activity {
         for(AppEntry a:apps) {
             if(a.cacheBytes!=null && a.cacheBytes==0 && !prefs.getBoolean("show_zero",false)) continue;
             visible++;
-            CheckBox row=new CheckBox(this); row.setText(a.label+(RunJournal.completed(this,a.packageName)?getString(R.string.done_saved):"")+(a.system?getString(R.string.ui_044):"")+(!a.enabled?getString(R.string.ui_045):"")+getString(R.string.ui_046)+(a.cacheBytes==null?getString(R.string.ui_047):format(a.cacheBytes))+"  •  "+a.packageName); row.setTextSize(13); row.setTextColor(WHITE); row.setChecked(a.selected); row.setEnabled(a.enabled && a.cacheBytes!=null && a.cacheBytes>0); row.setPadding(dp(6),dp(8),dp(6),dp(8));
+            CheckBox row=new CheckBox(this); row.setText(a.label+(RunJournal.smallSkipped(this,a.packageName)?getString(R.string.small_saved):RunJournal.completed(this,a.packageName)?getString(R.string.done_saved):"")+(a.system?getString(R.string.ui_044):"")+(!a.enabled?getString(R.string.ui_045):"")+getString(R.string.ui_046)+(a.cacheBytes==null?getString(R.string.ui_047):format(a.cacheBytes))+"  •  "+a.packageName); row.setTextSize(13); row.setTextColor(WHITE); row.setChecked(a.selected); row.setEnabled(a.enabled && a.cacheBytes!=null && a.cacheBytes>0); row.setPadding(dp(6),dp(8),dp(6),dp(8));
             row.setOnCheckedChangeListener((v,on)-> { a.selected=on; updateStatus(); }); list.addView(row,new LinearLayout.LayoutParams(-1,-2));
         }
         if(visible==0) { TextView t=text(getString(R.string.ui_048),13,MUTED,false); list.addView(t); }
@@ -264,7 +264,7 @@ public class MainActivity extends Activity {
             progress.append(enabled?getString(R.string.ui_077):getString(R.string.ui_078));
         if(!CleanerService.running && journal.has("rows")) {
             int remaining=RunJournal.remaining(this).size();
-            progress.append("\n"+journalReason(journal.optString("reason"))+"\n"+RunJournal.count(this,"confirmed")+" "+getString(R.string.confirmed_saved)+" • "+remaining+" "+getString(R.string.remaining_apps));
+            progress.append("\n"+journalReason(journal.optString("reason"))+"\n"+RunJournal.count(this,"confirmed")+" "+getString(R.string.confirmed_saved)+" • "+RunJournal.count(this,"small_cache_skipped")+" "+getString(R.string.small_count)+" • "+remaining+" "+getString(R.string.remaining_apps));
             String current=journal.optString("current");if(!current.isEmpty() && !"finished".equals(journal.optString("reason")))progress.append("\n"+getString(R.string.last_app)+": "+current);
         }
         resume.setVisibility(!CleanerService.running && !RunJournal.remaining(this).isEmpty()?View.VISIBLE:View.GONE);resume.setEnabled(!scanning);
