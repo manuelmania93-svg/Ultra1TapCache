@@ -15,7 +15,7 @@ import org.robolectric.annotation.GraphicsMode;
 import static org.junit.Assert.*;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk=35, qualifiers="w411dp-h891dp-420dpi")
+@Config(sdk=35, qualifiers="de-w411dp-h891dp-420dpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 public class MainActivityRenderTest {
  @Test public void rendersMainScreen() throws Exception {
@@ -46,7 +46,7 @@ public class MainActivityRenderTest {
   assertTrue(button.performClick());
   android.app.AlertDialog dialog=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();
   assertNotNull(dialog); assertTrue(dialog.isShowing());
-  assertEquals("Bedienungshilfe aktivieren",org.robolectric.Shadows.shadowOf(dialog).getTitle().toString());
+  assertEquals(a.getString(R.string.ui_019),org.robolectric.Shadows.shadowOf(dialog).getTitle().toString());
   assertFalse(CleanerService.running);
   View v=dialog.getWindow().getDecorView();
   v.measure(View.MeasureSpec.makeMeasureSpec(1000,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1900,View.MeasureSpec.AT_MOST));
@@ -68,11 +68,11 @@ public class MainActivityRenderTest {
   MainActivity a=Robolectric.buildActivity(MainActivity.class).create().get();
   java.lang.reflect.Method status=MainActivity.class.getDeclaredMethod("updateStatus"); status.setAccessible(true); status.invoke(a);
   java.lang.reflect.Field access=MainActivity.class.getDeclaredField("access"); access.setAccessible(true);
-  assertEquals("! Dienst getrennt",((android.widget.Button)access.get(a)).getText().toString());
+  assertEquals(a.getString(R.string.ui_075),((android.widget.Button)access.get(a)).getText().toString());
   java.lang.reflect.Field clean=MainActivity.class.getDeclaredField("clean"); clean.setAccessible(true);
   ((android.widget.Button)clean.get(a)).performClick();
   android.app.AlertDialog dialog=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();
-  assertEquals("Bedienungshilfe nicht verbunden",org.robolectric.Shadows.shadowOf(dialog).getTitle().toString());
+  assertEquals(a.getString(R.string.ui_018),org.robolectric.Shadows.shadowOf(dialog).getTitle().toString());
   assertFalse(CleanerService.running); dialog.dismiss(); a.finish();
   android.provider.Settings.Secure.putString(context.getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,"");
  }
@@ -85,10 +85,10 @@ public class MainActivityRenderTest {
   MainActivity a=Robolectric.buildActivity(MainActivity.class).create().get();
   java.lang.reflect.Method status=MainActivity.class.getDeclaredMethod("updateStatus");status.setAccessible(true);status.invoke(a);
   java.lang.reflect.Field total=MainActivity.class.getDeclaredField("total");total.setAccessible(true);
-  assertEquals("Zugriff fehlt",((android.widget.TextView)total.get(a)).getText().toString());
+  assertEquals(a.getString(R.string.ui_057),((android.widget.TextView)total.get(a)).getText().toString());
   java.lang.reflect.Field usage=MainActivity.class.getDeclaredField("usage");usage.setAccessible(true);
   android.widget.Button button=(android.widget.Button)usage.get(a);
-  assertEquals("! Zugriff verweigert",button.getText().toString()); button.performClick();
+  assertEquals(a.getString(R.string.ui_072),button.getText().toString()); button.performClick();
   android.app.AlertDialog dialog=org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog();
   assertTrue(org.robolectric.Shadows.shadowOf(dialog).getMessage().toString().contains("com.example.other"));
   View v=a.getWindow().getDecorView();
