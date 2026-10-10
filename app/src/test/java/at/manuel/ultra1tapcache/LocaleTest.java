@@ -28,7 +28,7 @@ public class LocaleTest {
    Configuration cfg=new Configuration(c.getResources().getConfiguration());cfg.setLocales(new LocaleList(Locale.forLanguageTag(code)));
    Context localized=c.createConfigurationContext(cfg);
    assertEquals("Ultra1TapCache",localized.getString(R.string.app_name));
-   assertEquals(code.equals("de")?"Neu scannen":"Scan again",localized.getString(R.string.ui_009));
+   assertEquals(code.equals("de")?"Neu scannen":"Scan again",localized.getString(R.string.ui_010));
    assertTrue(localized.getString(R.string.service_description).contains(code.equals("de")?"Cache leeren":"Clear cache"));
   }
  }
