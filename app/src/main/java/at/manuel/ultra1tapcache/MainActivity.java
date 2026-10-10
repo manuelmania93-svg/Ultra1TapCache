@@ -183,7 +183,7 @@ public class MainActivity extends Activity {
 
         scan=worker.submit(()-> {
             List<AppEntry> found=AppScanner.scan(this,false);
-            handler.post(()-> { if(isDestroyed() || token!=generation) return; apps=found; scanning=false; renderList(); updateStatus(); maybeGuideSetup(); });
+            handler.post(()-> { if(isDestroyed() || token!=generation) return; apps=found; RunJournal.apply(this,apps); scanning=false; renderList(); updateStatus(); maybeGuideSetup(); });
         });
     }
     private void renderList() {
@@ -193,7 +193,7 @@ public class MainActivity extends Activity {
         for(AppEntry a:apps) {
             if(a.cacheBytes!=null && a.cacheBytes==0 && !prefs.getBoolean("show_zero",false)) continue;
             visible++;
-            CheckBox row=new CheckBox(this); row.setText(a.label+(a.system?getString(R.string.ui_044):"")+(!a.enabled?getString(R.string.ui_045):"")+getString(R.string.ui_046)+(a.cacheBytes==null?getString(R.string.ui_047):format(a.cacheBytes))+"  •  "+a.packageName); row.setTextSize(13); row.setTextColor(WHITE); row.setChecked(a.selected); row.setEnabled(a.enabled && a.cacheBytes!=null && a.cacheBytes>0); row.setPadding(dp(6),dp(8),dp(6),dp(8));
+            CheckBox row=new CheckBox(this); row.setText(a.label+(RunJournal.completed(this,a.packageName)?getString(R.string.done_saved):"")+(a.system?getString(R.string.ui_044):"")+(!a.enabled?getString(R.string.ui_045):"")+getString(R.string.ui_046)+(a.cacheBytes==null?getString(R.string.ui_047):format(a.cacheBytes))+"  •  "+a.packageName); row.setTextSize(13); row.setTextColor(WHITE); row.setChecked(a.selected); row.setEnabled(a.enabled && a.cacheBytes!=null && a.cacheBytes>0); row.setPadding(dp(6),dp(8),dp(6),dp(8));
             row.setOnCheckedChangeListener((v,on)-> { a.selected=on; updateStatus(); }); list.addView(row,new LinearLayout.LayoutParams(-1,-2));
         }
         if(visible==0) { TextView t=text(getString(R.string.ui_048),13,MUTED,false); list.addView(t); }
@@ -263,7 +263,7 @@ public class MainActivity extends Activity {
         resume.setVisibility(!CleanerService.running && !RunJournal.remaining(this).isEmpty()?View.VISIBLE:View.GONE);resume.setEnabled(!scanning);
         clean.setText(CleanerService.running?getString(R.string.ui_079):getString(R.string.ui_080)+selected+getString(R.string.ui_081)); clean.setEnabled(true); refresh.setEnabled(!scanning && !CleanerService.running);
     }
-    @Override protected void onResume() { super.onResume(); resumed=true; renderList(); handler.post(update); handler.post(()->maybeGuideSetup()); if(recheckUsage && !CleanerService.running) { recheckUsage=false; startScan(); } else if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
+    @Override protected void onResume() { super.onResume(); resumed=true; RunJournal.apply(this,apps); renderList(); handler.post(update); handler.post(()->maybeGuideSetup()); if(recheckUsage && !CleanerService.running) { recheckUsage=false; startScan(); } else if(apps.isEmpty() && !scanning && !CleanerService.running) startScan(); }
     @Override protected void onPause() { resumed=false; handler.removeCallbacks(update); super.onPause(); }
     @Override protected void onDestroy() { generation++; if(scan!=null) scan.cancel(true); worker.shutdownNow(); handler.removeCallbacksAndMessages(null); super.onDestroy(); }
     private TextView text(String s,int sp,int color,boolean bold) { TextView t=new TextView(this); t.setText(s); t.setTextSize(sp); t.setTextColor(color); if(bold)t.setTypeface(null,Typeface.BOLD); return t; }
