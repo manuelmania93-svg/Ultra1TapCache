@@ -60,6 +60,12 @@ final class AppScanner {
             int order = Long.compare(bc, ac);
             return order != 0 ? order : a.label.compareToIgnoreCase(b.label);
         });
+        boolean anyMeasured = false;
+        for (AppEntry e : result) if (e.cacheBytes != null) { anyMeasured = true; break; }
+        if (!anyMeasured && lastError != null && !result.isEmpty()) {
+            // Never fail silently: show why Android refused the measurement.
+            result.add(0, new AppEntry("diagnose.messfehler", "Messfehler: " + lastError, null));
+        }
         return result;
     }
-}
+                                   }
