@@ -36,7 +36,8 @@ public class CleanerService extends AccessibilityService {
     private long deadline, nextAllowed;
     private int uiWait=250,afterWait=400;
     private long clickedAt;
-    private boolean clickRejected;
+    private boolean clickRejected,disabledSeen;
+    private int cleanAttempt;
     private Button stopButton;
     private WindowManager wm;
     private final Runnable tick = () -> {try {step();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}};
@@ -83,7 +84,7 @@ public class CleanerService extends AccessibilityService {
         if (!running) return;
         index++;
         if (index >= queue.size()) { stop("finished",getString(R.string.ui_086)); return; }
-        attempted++;clickRejected=false;cacheClicked=storageOpened=identitySeen=measuring=false;preparing=true;appToken++;
+        attempted++;cleanAttempt=1;disabledSeen=false;clickRejected=false;cacheClicked=storageOpened=identitySeen=measuring=false;preparing=true;appToken++;
         AppEntry app=queue.get(index);status=(index+1)+"/"+queue.size()+" • "+app.label;
         stopButton.setText("STOP • "+(index+1)+"/"+queue.size());
         RunJournal.state(this,app.packageName,"started",null,0);
@@ -97,6 +98,7 @@ public class CleanerService extends AccessibilityService {
                 if(baseline==null){recordAndAdvance("unmeasurable",null,0);return;}
                 app.cacheBytes=baseline;RunJournal.baseline(this,app.packageName,baseline);
                 if(baseline==0){recordAndAdvance("already_empty",0L,0);return;}
+                if(baseline<=16384){recordAndAdvance("small_cache_skipped",baseline,0);return;}
                 deadline=SystemClock.uptimeMillis()+12000;nextAllowed=SystemClock.uptimeMillis()+uiWait;
                 try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));schedule(uiWait); }
                 catch(RuntimeException e){recordAndAdvance("settings_failed",null,0);}
@@ -113,7 +115,7 @@ public class CleanerService extends AccessibilityService {
         AppEntry app=queue.get(index);RunJournal.state(this,app.packageName,state,after,bytes);
         if(after!=null)app.cacheBytes=after;
         if("confirmed".equals(state)){verified++;reclaimed+=bytes;app.selected=false;}
-        else if("already_empty".equals(state)){app.selected=false;}
+        else if("already_empty".equals(state)||"small_cache_skipped".equals(state)){app.selected=false;}
         else skipped++;
         measuring=preparing=false;disarmWatchdog();handler.post(()->{try{nextApp();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}});
     }
@@ -125,7 +127,7 @@ public class CleanerService extends AccessibilityService {
     private void step() {
         if (!running || measuring || preparing) return;
         long now = SystemClock.uptimeMillis();
-        if (now >= deadline) { recordAndAdvance(clickRejected?"cache_click_rejected":identitySeen?"cache_button_not_found":"settings_timeout",null,0); return; }
+        if (now >= deadline) { recordAndAdvance(clickRejected?"cache_click_rejected":disabledSeen?"cache_button_disabled":identitySeen?"cache_button_not_found":"settings_timeout",null,0); return; }
         if (now < nextAllowed) { schedule(nextAllowed-now); return; }
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) { schedule(200); return; }
@@ -138,8 +140,10 @@ public class CleanerService extends AccessibilityService {
             AccessibilityNodeInfo cache = find(root,true);
             try {
             if (!cacheClicked && cache != null) {
-                if (!cache.isEnabled()) { recordAndAdvance("cache_button_disabled",null,0); return; }
-                if (safeClick(cache)) {
+                RunJournal.clickInfo(this,app.packageName,cache.isEnabled(),null,cleanAttempt);
+                if (!cache.isEnabled()) { disabledSeen=true;schedule(200);return; }
+                boolean accepted=safeClick(cache);RunJournal.clickInfo(this,app.packageName,true,accepted,cleanAttempt);
+                if (accepted) {
                     cacheClicked = true; clicked++;clickedAt=SystemClock.uptimeMillis();RunJournal.state(this,app.packageName,"clicked",null,0); nextAllowed = now + (afterWait);
                     schedule(afterWait); return;
                 } else clickRejected=true;
@@ -200,7 +204,8 @@ public class CleanerService extends AccessibilityService {
         }
         return false;
     }
-    static boolean measuredDecrease(Long baseline,Long after){return baseline!=null&&after!=null&&after<baseline;}
+    static boolean measuredDecrease(Long baseline,Long after){return baseline!=null&&after!=null&&baseline-after>4096;}
+    static boolean shouldRetry(Long baseline,Long after,int attempt){return baseline!=null&&after!=null&&baseline>=1048576&&!measuredDecrease(baseline,after)&&attempt<2;}
     static long retryDelay(int reads){return reads==1?300:reads==2?450:-1;}
     private void measureAndContinue() {
         if(!running||measuring)return;measuring=true;
@@ -218,7 +223,12 @@ public class CleanerService extends AccessibilityService {
                 if(measuredDecrease(app.cacheBytes,after)){recordAndAdvance("confirmed",after,app.cacheBytes-after);return;}
                 long delay=retryDelay(reads);
                 if(after!=null&&delay>=0){handler.postDelayed(()->measureAttempt(token,current,reads+1),delay);return;}
-                recordAndAdvance(after==null?"unmeasurable":"unconfirmed",after,0);
+                if(shouldRetry(app.cacheBytes,after,cleanAttempt)){
+                    disarmWatchdog();cleanAttempt++;cacheClicked=storageOpened=identitySeen=measuring=disabledSeen=clickRejected=false;appToken++;
+                    deadline=SystemClock.uptimeMillis()+12000;nextAllowed=SystemClock.uptimeMillis()+uiWait;
+                    try{startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));schedule(uiWait);}catch(RuntimeException e){recordAndAdvance("settings_failed",after,0);}return;
+                }
+                recordAndAdvance(after==null?"unmeasurable":app.cacheBytes!=null&&after<app.cacheBytes?"tiny_decrease":"unconfirmed",after,0);
             });
         });
     }
