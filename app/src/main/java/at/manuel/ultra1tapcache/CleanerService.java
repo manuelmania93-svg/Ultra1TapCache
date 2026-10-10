@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 public class CleanerService extends AccessibilityService {
     static CleanerService connected;
     static boolean running;
-    static String status = "Bereit";
+    static String status = "";
     static int attempted, clicked, verified, skipped;
     static long reclaimed;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -41,21 +41,21 @@ public class CleanerService extends AccessibilityService {
         if (connected == null || running || entries.isEmpty()) return false;
         connected.begin(entries, fast); return running;
     }
-    static void cancel() { if (connected != null) connected.finish("Abgebrochen"); }
+    static void cancel() { if (connected != null) connected.finish(connected.getString(R.string.ui_083)); }
     private void begin(List<AppEntry> entries, boolean fast) {
         generation++; queue = new ArrayList<>(entries); turbo = fast;
         attempted = clicked = verified = skipped = 0; reclaimed = 0; index = -1; running = true;
         try {
             wm = getSystemService(WindowManager.class);
-            stopButton = new Button(this); stopButton.setText("STOP • Ultra1TapCache");
+            stopButton = new Button(this); stopButton.setText(getString(R.string.ui_084));
             stopButton.setTextColor(Color.WHITE); stopButton.setBackgroundColor(Color.rgb(24,62,80));
-            stopButton.setOnClickListener(v -> finish("Abgebrochen"));
+            stopButton.setOnClickListener(v -> finish(getString(R.string.ui_083)));
             WindowManager.LayoutParams p = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT);
             p.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL; p.y = 80;
             wm.addView(stopButton,p);
         } catch (RuntimeException e) {
-            finish("Stopp-Schaltfläche nicht verfügbar. Keine Reinigung gestartet."); return;
+            finish(getString(R.string.ui_085)); return;
         }
         nextApp();
     }
@@ -63,7 +63,7 @@ public class CleanerService extends AccessibilityService {
         handler.removeCallbacks(tick);
         if (!running) return;
         index++;
-        if (index >= queue.size()) { finish("Reinigung beendet"); return; }
+        if (index >= queue.size()) { finish(getString(R.string.ui_086)); return; }
         attempted++; cacheClicked = storageOpened = identitySeen = measuring = false;
         AppEntry app = queue.get(index);
         status = (index + 1) + "/" + queue.size() + " • " + app.label;
@@ -178,6 +178,6 @@ public class CleanerService extends AccessibilityService {
             try { startActivity(i); } catch(RuntimeException ignored) { }
         }
     }
-    @Override public void onInterrupt() { finish("Bedienungshilfe unterbrochen"); }
-    @Override public void onDestroy() { finish("Dienst beendet"); connected=null; io.shutdownNow(); super.onDestroy(); }
+    @Override public void onInterrupt() { finish(getString(R.string.ui_087)); }
+    @Override public void onDestroy() { finish(getString(R.string.ui_088)); connected=null; io.shutdownNow(); super.onDestroy(); }
 }
