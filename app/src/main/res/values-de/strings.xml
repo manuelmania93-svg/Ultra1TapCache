@@ -115,4 +115,5 @@
     <string name="all_apps_settings">System: Alle Apps</string>
     <string name="restricted_possible">Android könnte diese Installation einschränken. Die Installationsquelle ist außerhalb von Google Play oder unbekannt, und die Reinigungshilfe ist nicht aktiviert. Das ist ein Hinweis, kein Nachweis einer aktiven Einschränkung.\n\n1. Unten App-Info öffnen antippen.\n2. Die drei Punkte antippen.\n3. Falls angeboten: Eingeschränkte Einstellungen zulassen und Androids Anweisungen folgen. Nur wenn du dieser App vertraust: Die Bedienungshilfe kann Bildschirminhalte lesen und mit anderen Apps interagieren.\n4. Zurückkommen und die Reinigungshilfe in den Bedienungshilfen aktivieren.\n\nFehlt der Menüpunkt, mit dem normalen Setup weitermachen. Nichts wird automatisch aktiviert.</string>
     <string name="speed_fast">Schnell</string>
+    <string name="done_saved">" (im gespeicherten Lauf erledigt)"</string>
 </resources>
