@@ -67,9 +67,9 @@ public class MainActivity extends Activity {
         shortcuts.addView(button(getString(R.string.open_app_info),()->openAppInfo()),new LinearLayout.LayoutParams(0,dp(48),1));root.addView(shortcuts);
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
         toggles.addView(text(getString(R.string.cleaning_speed),13,WHITE,true));
-        Spinner speed=new Spinner(this);String[] speedKeys={"slow","normal","turbo"};
-        ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{getString(R.string.speed_slow),getString(R.string.speed_normal),getString(R.string.speed_turbo)}) { @Override public View getView(int pos,View convert,android.view.ViewGroup parent){View v=super.getView(pos,convert,parent);((TextView)v).setTextColor(WHITE);return v;} };adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);speed.setAdapter(adapter);
-        String savedSpeed=prefs.getString("speed",prefs.getBoolean("turbo",true)?"turbo":"normal");speed.setSelection("slow".equals(savedSpeed)?0:"normal".equals(savedSpeed)?1:2);
+        Spinner speed=new Spinner(this);String[] speedKeys={"normal","fast","turbo"};
+        ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{getString(R.string.speed_normal),getString(R.string.speed_fast),getString(R.string.speed_turbo)}) { @Override public View getView(int pos,View convert,android.view.ViewGroup parent){View v=super.getView(pos,convert,parent);((TextView)v).setTextColor(WHITE);return v;} };adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);speed.setAdapter(adapter);
+        String savedSpeed=prefs.getString("speed",prefs.getBoolean("turbo",true)?"turbo":"normal");speed.setSelection("normal".equals(savedSpeed)||"slow".equals(savedSpeed)?0:"fast".equals(savedSpeed)?1:2);
         speed.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> p){}public void onItemSelected(AdapterView<?> p,View v,int pos,long id){prefs.edit().putString("speed",speedKeys[pos]).apply();}});
         toggles.addView(speed,new LinearLayout.LayoutParams(-1,dp(44)));
         toggles.addView(toggle(getString(R.string.ui_008), "ask", true, null));
