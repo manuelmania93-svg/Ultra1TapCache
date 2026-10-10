@@ -8,6 +8,9 @@ import org.robolectric.annotation.Config;
 import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class) @Config(sdk=35,qualifiers="de-w411dp-h891dp-420dpi") @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
 public class RunJournalTest {
+ @Test public void installerHintIsNotAConfirmedRestriction() {
+  assertTrue(MainActivity.restrictedSetupPossible(35,null,false));assertTrue(MainActivity.restrictedSetupPossible(35,"com.android.packageinstaller",false));assertFalse(MainActivity.restrictedSetupPossible(35,"com.android.vending",false));assertFalse(MainActivity.restrictedSetupPossible(35,null,true));assertFalse(MainActivity.restrictedSetupPossible(32,null,false));
+ }
  @Test public void settingsShortcutsOpenExactSystemPages() throws Exception {
   Context c=RuntimeEnvironment.getApplication();c.getSharedPreferences("settings",0).edit().putBoolean("disclosure_seen",true).commit();
   MainActivity a=org.robolectric.Robolectric.buildActivity(MainActivity.class).create().get();
