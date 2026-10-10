@@ -242,7 +242,7 @@ public class CleanerService extends AccessibilityService {
     }
     static boolean measuredDecrease(Long baseline,Long after){return baseline!=null&&after!=null&&baseline-after>4096;}
     static boolean shouldRetry(Long baseline,Long after,int attempt){return baseline!=null&&after!=null&&baseline>=1048576&&!measuredDecrease(baseline,after)&&attempt<2;}
-    static boolean exhaustedAccepted(Context c,String pkg,Long baseline,Long after,int attempt){org.json.JSONArray rows=RunJournal.read(c).optJSONArray("rows");if(rows==null)return false;for(int i=0;i<rows.length();i++){org.json.JSONObject r=rows.optJSONObject(i);if(r!=null&&pkg.equals(r.optString("pkg")))return attempt>=2&&after!=null&&baseline!=null&&after>=baseline&&r.optBoolean("click_accepted")&&r.optBoolean("button_enabled");}return false;}
+    static boolean exhaustedAccepted(Context c,String pkg,Long baseline,Long after,int attempt){org.json.JSONArray rows=RunJournal.read(c).optJSONArray("rows");if(rows==null)return false;for(int i=0;i<rows.length();i++){org.json.JSONObject r=rows.optJSONObject(i);if(r!=null&&pkg.equals(r.optString("pkg")))return attempt>=2&&after!=null&&baseline!=null&&after>=baseline&&r.optBoolean("first_attempt_accepted")&&r.optBoolean("click_accepted")&&r.optBoolean("button_enabled");}return false;}
     static long retryDelay(int reads){return reads==1?300:reads==2?450:-1;}
     private void measureAndContinue() {
         if(!running||measuring)return;measuring=true;
