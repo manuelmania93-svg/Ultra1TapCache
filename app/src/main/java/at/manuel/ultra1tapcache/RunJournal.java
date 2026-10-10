@@ -42,6 +42,17 @@ final class RunJournal {
         return result;
     }
     static int count(Context c,String state) {int count=0;JSONArray rows=read(c).optJSONArray("rows");if(rows!=null)for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null&&state.equals(r.optString("state")))count++;}return count;}
+    static String reasonLabel(Context c,String state){
+        int id="confirmed".equals(state)?R.string.diag_confirmed:"already_empty".equals(state)?R.string.diag_empty:"unconfirmed".equals(state)?R.string.diag_unchanged:"unmeasurable".equals(state)?R.string.diag_null:"cache_click_rejected".equals(state)?R.string.diag_click_rejected:"cache_button_disabled".equals(state)?R.string.diag_disabled:"cache_button_not_found".equals(state)?R.string.diag_not_found:"settings_timeout".equals(state)?R.string.diag_timeout:"settings_failed".equals(state)?R.string.diag_settings_failed:"clicked".equals(state)?R.string.diag_clicked:"started".equals(state)?R.string.diag_started:R.string.diag_pending;
+        return c.getString(id)+" ["+state+"]";
+    }
+    static String diagnostics(Context c){JSONObject run=read(c);JSONArray rows=run.optJSONArray("rows");if(rows==null)return c.getString(R.string.diag_no_run);
+        java.util.Map<String,Integer> counts=new java.util.TreeMap<>();for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null){String key=r.optString("state","pending");counts.put(key,counts.getOrDefault(key,0)+1);}}
+        StringBuilder s=new StringBuilder(c.getString(R.string.diag_title)+"\n"+c.getString(R.string.ui_001)+"\n"+c.getString(R.string.diag_run_reason)+": "+run.optString("reason")+"\n");
+        for(java.util.Map.Entry<String,Integer> entry:counts.entrySet())s.append(entry.getValue()).append(" × ").append(reasonLabel(c,entry.getKey())).append("\n");
+        for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r==null)continue;s.append("\n").append(r.optString("label")).append(" ( ").append(r.optString("pkg")).append(" )\n").append(reasonLabel(c,r.optString("state"))).append("\n").append(c.getString(R.string.diag_baseline)).append(": ").append(r.has("baseline")&&!r.isNull("baseline")?r.optLong("baseline")+" B":"?").append("; ").append(c.getString(R.string.diag_after)).append(": ").append(r.has("after")&&!r.isNull("after")?r.optLong("after")+" B":"?").append("\n").append(c.getString(R.string.diag_reads)).append(": ").append(r.optInt("measurement_reads")).append("; ").append(c.getString(R.string.diag_elapsed)).append(": ").append(r.has("click_to_read_ms")?r.optLong("click_to_read_ms")+" ms":"?").append("\n");}
+        return s.toString();
+    }
     static boolean completed(Context c,String pkg){JSONArray rows=read(c).optJSONArray("rows");if(rows!=null)for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null&&pkg.equals(r.optString("pkg")))return done(r.optString("state"));}return false;}
     static void apply(Context c,List<AppEntry> apps) {JSONArray rows=read(c).optJSONArray("rows");if(rows==null)return;
         for(AppEntry a:apps)for(int i=0;i<rows.length();i++){JSONObject r=rows.optJSONObject(i);if(r!=null&&a.packageName.equals(r.optString("pkg"))&&done(r.optString("state"))){a.selected=false;}}
