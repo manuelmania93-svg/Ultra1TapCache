@@ -37,7 +37,8 @@ public class CleanerService extends AccessibilityService {
     private int uiWait=250,afterWait=400;
     private long clickedAt;
     private boolean clickRejected,disabledSeen;
-    private int cleanAttempt;
+    private int cleanAttempt, postClickChecks;
+    private boolean dialogConfirmed;
     private Button stopButton;
     private WindowManager wm;
     private final Runnable tick = () -> {try {step();}catch(RuntimeException e){stop("engine_error",getString(R.string.engine_error)+": "+e.getClass().getSimpleName());}};
@@ -84,7 +85,7 @@ public class CleanerService extends AccessibilityService {
         if (!running) return;
         index++;
         if (index >= queue.size()) { stop("finished",getString(R.string.ui_086)); return; }
-        attempted++;cleanAttempt=1;disabledSeen=false;clickRejected=false;cacheClicked=storageOpened=identitySeen=measuring=false;preparing=true;appToken++;
+        attempted++;cleanAttempt=1;postClickChecks=0;dialogConfirmed=false;disabledSeen=false;clickRejected=false;cacheClicked=storageOpened=identitySeen=measuring=false;preparing=true;appToken++;
         AppEntry app=queue.get(index);status=(index+1)+"/"+queue.size()+" • "+app.label;
         stopButton.setText("STOP • "+(index+1)+"/"+queue.size());
         RunJournal.state(this,app.packageName,"started",null,0);
@@ -135,6 +136,18 @@ public class CleanerService extends AccessibilityService {
             // Only Android's actual Settings app may receive clicks. Unknown OEM package fails closed.
             if (!"com.android.settings".contentEquals(root.getPackageName() == null ? "" : root.getPackageName())) { schedule(200); return; }
             AppEntry app = queue.get(index);
+            if(cacheClicked){
+                RunJournal.detail(this,app.packageName,"screen_after",screenText(root));
+                AccessibilityNodeInfo dialog=findCacheDialog(root);
+                if(dialog!=null)try{
+                    if(!dialogConfirmed){AccessibilityNodeInfo yes=findAffirmative(dialog);if(yes!=null)try{
+                        boolean accepted=safeClick(yes);RunJournal.detail(this,app.packageName,"dialog_result",accepted?"cache dialog confirmation accepted":"cache dialog click rejected");
+                        if(accepted){dialogConfirmed=true;nextAllowed=now+afterWait;schedule(afterWait);return;}
+                    }finally{yes.recycle();}}
+                }finally{if(dialog!=root)dialog.recycle();}
+                if(++postClickChecks<3&&!dialogConfirmed){nextAllowed=now+200;schedule(200);return;}
+                measureAndContinue();return;
+            }
             identitySeen = containsIdentity(root, app);
             if (!identitySeen) { schedule(200); return; }
             AccessibilityNodeInfo cache = find(root,true);
@@ -142,6 +155,7 @@ public class CleanerService extends AccessibilityService {
             if (!cacheClicked && cache != null) {
                 RunJournal.clickInfo(this,app.packageName,cache.isEnabled(),null,cleanAttempt);
                 if (!cache.isEnabled()) { disabledSeen=true;schedule(200);return; }
+                RunJournal.detail(this,app.packageName,"matched_cache",nodeDescription(cache));
                 boolean accepted=safeClick(cache);RunJournal.clickInfo(this,app.packageName,true,accepted,cleanAttempt);
                 if (accepted) {
                     cacheClicked = true; clicked++;clickedAt=SystemClock.uptimeMillis();RunJournal.state(this,app.packageName,"clicked",null,0); nextAllowed = now + (afterWait);
@@ -149,10 +163,6 @@ public class CleanerService extends AccessibilityService {
                 } else clickRejected=true;
             }
             } finally { if(cache!=null && cache!=root)cache.recycle(); }
-            if (cacheClicked) {
-                // Never confirm an OEM dialog with OK: unknown dialogs time out and get measured honestly.
-                measureAndContinue(); return;
-            }
             if (!storageOpened) {
                 AccessibilityNodeInfo storage = find(root,false);
                 try {
@@ -190,11 +200,36 @@ public class CleanerService extends AccessibilityService {
         try {
             for(int depth=0;depth<3&&candidate!=null;depth++) {
                 if(containsDanger(candidate))return false;
-                if(candidate.isEnabled()&&candidate.isClickable())return candidate.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                if(candidate.isEnabled()&&candidate.isClickable()){RunJournal.detail(this,queue.get(index).packageName,"clicked_node",nodeDescription(candidate));return candidate.performAction(AccessibilityNodeInfo.ACTION_CLICK);}
                 candidate=candidate.getParent();if(candidate!=null)parents.add(candidate);
             }
             return false;
         } finally {for(AccessibilityNodeInfo parent:parents)parent.recycle();}
+    }
+    static String cut(String text,int max){return text.length()>max?text.substring(0,max)+"…":text;}
+    static String nodeDescription(AccessibilityNodeInfo node){
+        StringBuilder path=new StringBuilder();AccessibilityNodeInfo n=AccessibilityNodeInfo.obtain(node);
+        try{for(int depth=0;n!=null&&depth<8;depth++){if(depth>0)path.insert(0," / ");path.insert(0,String.valueOf(n.getClassName())+"#"+n.getViewIdResourceName());AccessibilityNodeInfo parent=n.getParent();n.recycle();n=parent;}}
+        finally{if(n!=null)n.recycle();}
+        return cut("text="+node.getText()+"; description="+node.getContentDescription()+"; path="+path,600);
+    }
+    static String screenText(AccessibilityNodeInfo root){StringBuilder s=new StringBuilder();collectText(root,s,0,new int[]{0});return cut(s.toString(),1200);}
+    private static void collectText(AccessibilityNodeInfo n,StringBuilder s,int depth,int[] count){
+        if(depth>7||count[0]++>=45||s.length()>=1200)return;
+        if(n.isVisibleToUser()){String text=SafeLabels.normalize(n.getText());if(!text.isEmpty())s.append(cut(text,120)).append(" | ");}
+        for(int i=0;i<n.getChildCount();i++){AccessibilityNodeInfo c=n.getChild(i);if(c!=null)try{collectText(c,s,depth+1,count);}finally{c.recycle();}}
+    }
+    static String dialogText(AccessibilityNodeInfo n){StringBuilder s=new StringBuilder();dialogContent(n,s,0);return cut(s.toString(),1200);}
+    private static void dialogContent(AccessibilityNodeInfo n,StringBuilder s,int depth){if(depth>7||s.length()>1200)return;if(n.isVisibleToUser()&&!n.isClickable())s.append(n.getText()==null?"":n.getText()).append(" | ");for(int i=0;i<n.getChildCount();i++){AccessibilityNodeInfo c=n.getChild(i);if(c!=null)try{dialogContent(c,s,depth+1);}finally{c.recycle();}}}
+    private AccessibilityNodeInfo findCacheDialog(AccessibilityNodeInfo n){
+        String clazz=String.valueOf(n.getClassName()),id=String.valueOf(n.getViewIdResourceName());
+        boolean dialog=clazz.toLowerCase(java.util.Locale.ROOT).contains("dialog")||id.endsWith(":id/parentPanel");
+        if(dialog&&n.isVisibleToUser()&&SafeLabels.cacheDialog(dialogText(n))&&!containsDanger(n))return n;
+        for(int i=0;i<n.getChildCount();i++){AccessibilityNodeInfo c=n.getChild(i);if(c==null)continue;AccessibilityNodeInfo found=findCacheDialog(c);if(found!=null){if(found!=c)c.recycle();return found;}c.recycle();}return null;
+    }
+    private AccessibilityNodeInfo findAffirmative(AccessibilityNodeInfo n){
+        if(n.isVisibleToUser()&&n.isEnabled()&&n.isClickable()&&SafeLabels.affirmative(n.getText()))return n;
+        for(int i=0;i<n.getChildCount();i++){AccessibilityNodeInfo c=n.getChild(i);if(c==null)continue;AccessibilityNodeInfo found=findAffirmative(c);if(found!=null){if(found!=c)c.recycle();return found;}c.recycle();}return null;
     }
     private boolean containsDanger(AccessibilityNodeInfo n) {
         if (SafeLabels.danger(n.getText()) || SafeLabels.danger(n.getContentDescription())) return true;
@@ -224,7 +259,7 @@ public class CleanerService extends AccessibilityService {
                 long delay=retryDelay(reads);
                 if(after!=null&&delay>=0){handler.postDelayed(()->measureAttempt(token,current,reads+1),delay);return;}
                 if(shouldRetry(app.cacheBytes,after,cleanAttempt)){
-                    disarmWatchdog();cleanAttempt++;cacheClicked=storageOpened=identitySeen=measuring=disabledSeen=clickRejected=false;appToken++;
+                    disarmWatchdog();cleanAttempt++;postClickChecks=0;dialogConfirmed=false;cacheClicked=storageOpened=identitySeen=measuring=disabledSeen=clickRejected=false;appToken++;
                     deadline=SystemClock.uptimeMillis()+12000;nextAllowed=SystemClock.uptimeMillis()+uiWait;
                     try{startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));schedule(uiWait);}catch(RuntimeException e){recordAndAdvance("settings_failed",after,0);}return;
                 }
