@@ -58,6 +58,7 @@ public class MainActivity extends Activity {
         LinearLayout hero=new LinearLayout(this); hero.setOrientation(LinearLayout.VERTICAL); hero.setPadding(dp(18),dp(16),dp(18),dp(16)); hero.setBackground(round(CARD,18));
         hero.addView(text(getString(R.string.ui_003),11,CYAN,true)); total=text("-",34,WHITE,true); hero.addView(total);
         progress=text(getString(R.string.ui_004),12,MUTED,false); hero.addView(progress); root.addView(hero);
+        TextView selectionHint=text(getString(R.string.large_default_hint),11,MUTED,false);root.addView(selectionHint);
         LinearLayout permissions=new LinearLayout(this); usage=button(getString(R.string.ui_005),()->openUsage()); access=button(getString(R.string.ui_006),()->showAccessibilitySetup());
         permissions.addView(usage,new LinearLayout.LayoutParams(0,dp(48),1)); permissions.addView(access,new LinearLayout.LayoutParams(0,dp(48),1)); root.addView(permissions);
         Button setup=button(getString(R.string.setup_help),()->showAndroidSetupHelp());
@@ -190,7 +191,7 @@ public class MainActivity extends Activity {
 
         scan=worker.submit(()-> {
             List<AppEntry> found=AppScanner.scan(this,false);
-            handler.post(()-> { if(isDestroyed() || token!=generation) return; apps=found; RunJournal.apply(this,apps); scanning=false; renderList(); updateStatus(); maybeGuideSetup(); });
+            handler.post(()-> { if(isDestroyed() || token!=generation) return; apps=found; selectLargeByDefault(apps);RunJournal.apply(this,apps); scanning=false; renderList(); updateStatus(); maybeGuideSetup(); });
         });
     }
     private void renderList() {
@@ -205,6 +206,7 @@ public class MainActivity extends Activity {
         }
         if(visible==0) { TextView t=text(getString(R.string.ui_048),13,MUTED,false); list.addView(t); }
     }
+    static void selectLargeByDefault(List<AppEntry> entries){for(AppEntry a:entries)a.selected=!a.system&&a.enabled&&a.cacheBytes!=null&&a.cacheBytes>1048576;}
     static void selectAllMeasured(List<AppEntry> entries) {
         for(AppEntry a:entries) a.selected=a.enabled && a.cacheBytes!=null && a.cacheBytes>0;
     }
