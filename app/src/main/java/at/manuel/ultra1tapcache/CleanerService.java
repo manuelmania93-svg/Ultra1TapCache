@@ -134,6 +134,7 @@ public class CleanerService extends AccessibilityService {
             identitySeen = containsIdentity(root, app);
             if (!identitySeen) { schedule(200); return; }
             AccessibilityNodeInfo cache = find(root,true);
+            try {
             if (!cacheClicked && cache != null) {
                 if (!cache.isEnabled()) { recordAndAdvance("cache_button_disabled",null,0); return; }
                 if (safeClick(cache)) {
@@ -141,16 +142,19 @@ public class CleanerService extends AccessibilityService {
                     schedule(afterWait); return;
                 }
             }
+            } finally { if(cache!=null && cache!=root)cache.recycle(); }
             if (cacheClicked) {
                 // Never confirm an OEM dialog with OK: unknown dialogs time out and get measured honestly.
                 measureAndContinue(); return;
             }
             if (!storageOpened) {
                 AccessibilityNodeInfo storage = find(root,false);
-                if (storage != null && safeClick(storage)) {
-                    storageOpened = true; nextAllowed = now + (uiWait);
-                    schedule(uiWait); return;
-                }
+                try {
+                    if (storage != null && safeClick(storage)) {
+                        storageOpened = true; nextAllowed = now + uiWait;
+                        schedule(uiWait); return;
+                    }
+                } finally {if(storage!=null && storage!=root)storage.recycle();}
             }
             schedule(200);
         } finally { root.recycle(); }
@@ -169,20 +173,22 @@ public class CleanerService extends AccessibilityService {
         for (int i=0;i<n.getChildCount();i++) {
             AccessibilityNodeInfo child=n.getChild(i); if(child==null) continue;
             AccessibilityNodeInfo found=find(child,cache);
-            if (found != null) return found;
+            if (found != null) { if(found!=child)child.recycle(); return found; }
             child.recycle();
         }
         return null;
     }
     private boolean safeClick(AccessibilityNodeInfo node) {
-        // A clickable parent must not combine Cache with a separate Clear data control.
         AccessibilityNodeInfo candidate=node;
-        for (int depth=0;depth<3 && candidate!=null;depth++) {
-            if (containsDanger(candidate)) return false;
-            if (candidate.isEnabled() && candidate.isClickable()) return candidate.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-            candidate=candidate.getParent();
-        }
-        return false;
+        List<AccessibilityNodeInfo> parents=new ArrayList<>();
+        try {
+            for(int depth=0;depth<3&&candidate!=null;depth++) {
+                if(containsDanger(candidate))return false;
+                if(candidate.isEnabled()&&candidate.isClickable())return candidate.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                candidate=candidate.getParent();if(candidate!=null)parents.add(candidate);
+            }
+            return false;
+        } finally {for(AccessibilityNodeInfo parent:parents)parent.recycle();}
     }
     private boolean containsDanger(AccessibilityNodeInfo n) {
         if (SafeLabels.danger(n.getText()) || SafeLabels.danger(n.getContentDescription())) return true;
