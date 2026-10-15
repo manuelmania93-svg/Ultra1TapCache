@@ -32,9 +32,8 @@ public class ScrollSmokeTest {
         UiDevice device=UiDevice.getInstance(i);
         assertTrue(device.wait(Until.hasObject(By.pkg(c.getPackageName()).depth(0)),10000));
         // Dismiss optional guided setup, never grant Accessibility or run a real clean.
-        device.pressBack();
-        if(a.isFinishing()) a=(MainActivity)i.startActivitySync(new Intent(c,MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        if(device.wait(Until.hasObject(By.text(c.getString(R.string.ui_025))),3000))
+            device.findObject(By.text(c.getString(R.string.ui_025))).click();
         final MainActivity activity=a;
         Field scan=MainActivity.class.getDeclaredField("scanning");scan.setAccessible(true);
         long deadline=System.currentTimeMillis()+20000;
