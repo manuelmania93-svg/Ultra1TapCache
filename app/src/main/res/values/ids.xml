@@ -1,0 +1,4 @@
+<resources>
+    <item name="content_scroll" type="id"/>
+    <item name="clean_button" type="id"/>
+</resources>
