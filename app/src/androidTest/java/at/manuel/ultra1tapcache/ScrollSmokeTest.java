@@ -32,8 +32,8 @@ public class ScrollSmokeTest {
         UiDevice device=UiDevice.getInstance(i);
         assertTrue(device.wait(Until.hasObject(By.pkg(c.getPackageName()).depth(0)),10000));
         // Dismiss optional guided setup, never grant Accessibility or run a real clean.
-        if(device.wait(Until.hasObject(By.text(c.getString(R.string.ui_025))),3000))
-            device.findObject(By.text(c.getString(R.string.ui_025))).click();
+        if(device.wait(Until.hasObject(By.res("android:id/button2")),3000))
+            device.findObject(By.res("android:id/button2")).click();
         final MainActivity activity=a;
         Field scan=MainActivity.class.getDeclaredField("scanning");scan.setAccessible(true);
         long deadline=System.currentTimeMillis()+20000;
@@ -64,6 +64,7 @@ public class ScrollSmokeTest {
         int x=viewport.centerX();
         assertTrue(device.swipe(x,viewport.bottom-30,x,viewport.top+30,30));
         i.waitForIdleSync();
+        device.takeScreenshot(new File("/sdcard/Download/scroll12-"+suffix+"-swipe.png"));
         assertTrue("Touch swipe moved the entire content",scroll.getScrollY()>0);
         // Traverse all apps: no nested viewport and no unreachable bottom row.
         i.runOnMainSync(()->scroll.scrollTo(0,scroll.getChildAt(0).getHeight()));
@@ -74,7 +75,7 @@ public class ScrollSmokeTest {
         assertEquals("Start remains pinned during scrolling",startBefore,startAfter);
         device.takeScreenshot(new File("/sdcard/Download/scroll12-"+suffix+"-bottom.png"));
         assertTrue(device.click(startAfter.centerX(),startAfter.centerY()));
-        boolean setupVisible=device.wait(Until.hasObject(By.text(c.getString(R.string.ui_021))),5000);
+        boolean setupVisible=device.wait(Until.hasObject(By.res("android:id/button1")),5000);
         assertTrue("Tap reaches setup handler",setupVisible);
         assertFalse("Smoke test never starts cleaning",CleanerService.running);
         device.takeScreenshot(new File("/sdcard/Download/scroll12-"+suffix+"-tap.png"));
