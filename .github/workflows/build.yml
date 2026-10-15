@@ -8,6 +8,7 @@ permissions:
   contents: read
 jobs:
   build:
+    timeout-minutes: 25
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -20,7 +21,29 @@ jobs:
           packages: platform-tools platforms;android-35 build-tools;35.0.0
       - uses: gradle/actions/setup-gradle@v4
       - name: Build, tests and lint
-        run: ./gradlew assembleDebug testDebugUnitTest lintDebug
+        run: ./gradlew -Pandroid.useAndroidX=true assembleDebug testDebugUnitTest lintDebug
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android 15 launch, touch-scroll and start-button smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            mkdir -p app/build/reports/device
+            adb shell settings put system system_locales de-DE
+            ./gradlew -Pandroid.useAndroidX=true connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.capture=portrait; result=$?; adb pull /sdcard/Download/ app/build/reports/device/; test "$result" -eq 0
+            adb pull /sdcard/Download/ app/build/reports/device/
+            adb shell wm size 720x1280
+            adb shell wm density 320
+            adb shell settings put system font_scale 1.3
+            ./gradlew -Pandroid.useAndroidX=true connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.capture=small-large-font --rerun-tasks; result=$?; adb pull /sdcard/Download/ app/build/reports/device/; test "$result" -eq 0
+            adb pull /sdcard/Download/ app/build/reports/device/
       - uses: actions/upload-artifact@v4
         with:
           name: Ultra1TapCache-Debug-APK
@@ -34,3 +57,6 @@ jobs:
             app/build/reports/tests/
             app/build/reports/lint-results-debug.*
             app/build/reports/ui/
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            app/build/reports/device/

@@ -29,6 +29,7 @@ public class MainActivity extends Activity {
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private Future<?> scan;
     private LinearLayout root,list;
+    private ScrollView contentScroll;
     private TextView total,subtitle,progress;
     private Button clean,refresh,usage,access,resume;
     private List<AppEntry> apps=new ArrayList<>();
@@ -49,46 +50,55 @@ public class MainActivity extends Activity {
             android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars());
             v.setPadding(dp(20)+bars.left,dp(14)+bars.top,dp(20)+bars.right,dp(10)+bars.bottom); return insets;
         });
-        setContentView(root);
+        // Settings and results share ONE scroll viewport. Fixed controls above a weighted
+        // app-list viewport can consume the entire screen on small/large-font devices.
+        LinearLayout screen=root;
+        contentScroll=new ScrollView(this); contentScroll.setFillViewport(true);
+        contentScroll.setId(R.id.content_scroll);
+        root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL);
+        contentScroll.addView(root,new ScrollView.LayoutParams(-1,-2));
+        screen.addView(contentScroll,new LinearLayout.LayoutParams(-1,0,1));
+        setContentView(screen);
         LinearLayout header=new LinearLayout(this); header.setGravity(Gravity.CENTER_VERTICAL);
         ImageView icon=new ImageView(this); icon.setImageResource(at.manuel.ultra1tapcache.R.drawable.app_icon); icon.setScaleType(ImageView.ScaleType.FIT_CENTER); header.addView(icon,new LinearLayout.LayoutParams(dp(46),dp(54)));
         LinearLayout titles=new LinearLayout(this); titles.setOrientation(LinearLayout.VERTICAL); titles.setPadding(dp(12),0,0,0);
-        titles.addView(text(getString(R.string.app_name),22,WHITE,true)); titles.addView(text(getString(R.string.ui_001),10,CYAN,true)); header.addView(titles); root.addView(header);
+        titles.addView(text(getString(R.string.app_name),22,WHITE,true)); titles.addView(text("EXPERIMENT • SCROLL 12",10,CYAN,true)); header.addView(titles,new LinearLayout.LayoutParams(0,-2,1)); root.addView(header);
         subtitle=text(getString(R.string.ui_002),13,MUTED,false); subtitle.setPadding(0,dp(12),0,dp(12)); root.addView(subtitle);
         LinearLayout hero=new LinearLayout(this); hero.setOrientation(LinearLayout.VERTICAL); hero.setPadding(dp(18),dp(16),dp(18),dp(16)); hero.setBackground(round(CARD,18));
         hero.addView(text(getString(R.string.ui_003),11,CYAN,true)); total=text("-",34,WHITE,true); hero.addView(total);
         progress=text(getString(R.string.ui_004),12,MUTED,false); hero.addView(progress); root.addView(hero);
         TextView selectionHint=text(getString(R.string.large_default_hint),11,MUTED,false);root.addView(selectionHint);
         LinearLayout permissions=new LinearLayout(this); usage=button(getString(R.string.ui_005),()->openUsage()); access=button(getString(R.string.ui_006),()->showAccessibilitySetup());
-        permissions.addView(usage,new LinearLayout.LayoutParams(0,dp(48),1)); permissions.addView(access,new LinearLayout.LayoutParams(0,dp(48),1)); root.addView(permissions);
+        permissions.addView(usage,new LinearLayout.LayoutParams(0,-2,1)); permissions.addView(access,new LinearLayout.LayoutParams(0,-2,1)); root.addView(permissions);
         Button setup=button(getString(R.string.setup_help),()->showAndroidSetupHelp());
-        root.addView(setup,new LinearLayout.LayoutParams(-1,dp(44)));
+        root.addView(setup,new LinearLayout.LayoutParams(-1,-2));
         LinearLayout shortcuts=new LinearLayout(this);
-        shortcuts.addView(button(getString(R.string.all_apps_settings),()->openAllApps()),new LinearLayout.LayoutParams(0,dp(48),1));
-        shortcuts.addView(button(getString(R.string.open_app_info),()->openAppInfo()),new LinearLayout.LayoutParams(0,dp(48),1));root.addView(shortcuts);
+        shortcuts.addView(button(getString(R.string.all_apps_settings),()->openAllApps()),new LinearLayout.LayoutParams(0,-2,1));
+        shortcuts.addView(button(getString(R.string.open_app_info),()->openAppInfo()),new LinearLayout.LayoutParams(0,-2,1));root.addView(shortcuts);
         LinearLayout historyActions=new LinearLayout(this);
-        historyActions.addView(button(getString(R.string.history_title),()->new AlertDialog.Builder(this).setTitle(getString(R.string.history_title)).setMessage(getString(R.string.history_hint)).setPositiveButton(android.R.string.ok,null).show()),new LinearLayout.LayoutParams(0,dp(48),1));
-        historyActions.addView(button(getString(R.string.diag_title),()->showRunDiagnostics()),new LinearLayout.LayoutParams(0,dp(48),1));root.addView(historyActions);
+        historyActions.addView(button(getString(R.string.history_title),()->new AlertDialog.Builder(this).setTitle(getString(R.string.history_title)).setMessage(getString(R.string.history_hint)).setPositiveButton(android.R.string.ok,null).show()),new LinearLayout.LayoutParams(0,-2,1));
+        historyActions.addView(button(getString(R.string.diag_title),()->showRunDiagnostics()),new LinearLayout.LayoutParams(0,-2,1));root.addView(historyActions);
         LinearLayout toggles=new LinearLayout(this); toggles.setOrientation(LinearLayout.VERTICAL);
         toggles.addView(text(getString(R.string.cleaning_speed),13,WHITE,true));
         Spinner speed=new Spinner(this);String[] speedKeys={"normal","fast","turbo"};
         ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{getString(R.string.speed_normal),getString(R.string.speed_fast),getString(R.string.speed_turbo)}) { @Override public View getView(int pos,View convert,android.view.ViewGroup parent){View v=super.getView(pos,convert,parent);((TextView)v).setTextColor(WHITE);return v;} };adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);speed.setAdapter(adapter);
         String savedSpeed=prefs.getString("speed",prefs.getBoolean("turbo",true)?"turbo":"normal");speed.setSelection("normal".equals(savedSpeed)||"slow".equals(savedSpeed)?0:"fast".equals(savedSpeed)?1:2);
         speed.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> p){}public void onItemSelected(AdapterView<?> p,View v,int pos,long id){prefs.edit().putString("speed",speedKeys[pos]).apply();}});
-        toggles.addView(speed,new LinearLayout.LayoutParams(-1,dp(44)));
+        toggles.addView(speed,new LinearLayout.LayoutParams(-1,-2));
         toggles.addView(toggle(getString(R.string.ui_008), "ask", true, null));
         toggles.addView(toggle(getString(R.string.ui_009), "show_zero", false, ()->{ renderList(); updateStatus(); })); root.addView(toggles);
         LinearLayout commands=new LinearLayout(this);
         refresh=button(getString(R.string.ui_010),()->startScan()); Button all=button(getString(R.string.ui_011),()-> {
             boolean select=apps.stream().noneMatch(a->a.selected); for(AppEntry a:apps) a.selected=select && !a.system && a.enabled && a.cacheBytes!=null && a.cacheBytes>0;
             renderList(); updateStatus();
-        }); commands.addView(refresh,new LinearLayout.LayoutParams(0,dp(46),1)); commands.addView(all,new LinearLayout.LayoutParams(0,dp(46),1)); root.addView(commands);
+        }); commands.addView(refresh,new LinearLayout.LayoutParams(0,-2,1)); commands.addView(all,new LinearLayout.LayoutParams(0,-2,1)); root.addView(commands);
         Button allSystem=button(getString(R.string.select_all_system),()->confirmSelectAll());
-        root.addView(allSystem,new LinearLayout.LayoutParams(-1,dp(44)));
-        resume=button(getString(R.string.resume_cleaning),()->requestResume());root.addView(resume,new LinearLayout.LayoutParams(-1,dp(44)));
-        ScrollView scroll=new ScrollView(this); list=new LinearLayout(this); list.setOrientation(LinearLayout.VERTICAL); scroll.addView(list); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-        clean=button(getString(R.string.ui_012),()->requestClean()); clean.setTextColor(BG); clean.setBackground(round(CYAN,14)); root.addView(clean,new LinearLayout.LayoutParams(-1,dp(58)));
+        root.addView(allSystem,new LinearLayout.LayoutParams(-1,-2));
+        resume=button(getString(R.string.resume_cleaning),()->requestResume());root.addView(resume,new LinearLayout.LayoutParams(-1,-2));
+        list=new LinearLayout(this); list.setOrientation(LinearLayout.VERTICAL); root.addView(list,new LinearLayout.LayoutParams(-1,-2));
+        clean=button(getString(R.string.ui_012),()->requestClean()); clean.setTextColor(BG); clean.setBackground(round(CYAN,14)); clean.setId(R.id.clean_button); clean.setMinHeight(dp(58)); screen.addView(clean,new LinearLayout.LayoutParams(-1,-2));
         TextView footer=text(getString(R.string.ui_013),10,MUTED,false); footer.setPadding(0,dp(8),0,0); root.addView(footer);
+        root=screen;
     }
     private Switch toggle(String title,String key,boolean fallback,Runnable changed) {
         Switch s=new Switch(this); s.setText(title); s.setTextSize(13); s.setTextColor(WHITE); s.setChecked(prefs.getBoolean(key,fallback)); s.setPadding(0,dp(4),0,dp(4));
@@ -278,8 +288,8 @@ public class MainActivity extends Activity {
     @Override protected void onPause() { resumed=false; handler.removeCallbacks(update); super.onPause(); }
     @Override protected void onDestroy() { generation++; if(scan!=null) scan.cancel(true); worker.shutdownNow(); handler.removeCallbacksAndMessages(null); super.onDestroy(); }
     private TextView text(String s,int sp,int color,boolean bold) { TextView t=new TextView(this); t.setText(s); t.setTextSize(sp); t.setTextColor(color); if(bold)t.setTypeface(null,Typeface.BOLD); return t; }
-    private Button button(String s,Runnable action) { Button b=new Button(this); b.setText(s); b.setTextSize(12); b.setAllCaps(false); b.setTextColor(WHITE); b.setOnClickListener(v->action.run()); return b; }
+    private Button button(String s,Runnable action) { Button b=new Button(this); b.setText(s); b.setTextSize(12); b.setMinHeight(dp(48)); b.setAllCaps(false); b.setTextColor(WHITE); b.setOnClickListener(v->action.run()); return b; }
     private GradientDrawable round(int color,int radius) { GradientDrawable d=new GradientDrawable(); d.setColor(color); d.setCornerRadius(dp(radius)); return d; }
     private int dp(int v) { return Math.round(v*getResources().getDisplayMetrics().density); }
     static String format(long bytes) { if(bytes<1024)return bytes+" B"; if(bytes<1048576)return String.format(java.util.Locale.getDefault(),"%.1f KB",bytes/1024d); if(bytes<1073741824)return String.format(java.util.Locale.getDefault(),"%.1f MB",bytes/1048576d); return String.format(java.util.Locale.getDefault(),"%.2f GB",bytes/1073741824d); }
-}
+            }
